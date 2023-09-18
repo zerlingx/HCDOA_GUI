@@ -19,3 +19,13 @@
 使用GUI框架为`streamlit`，即一种类似web的框架，因此您的平台应具有必要的浏览器。
 
 要运行程序，在终端根目录下使用命令`streamlit run app/st_app.py`，运行后终端将显示端口和程序内输出信息，GUI程序将自动在浏览器打开。
+
+## 结果示例
+
+`script/basic_plot.py`绘制图像。
+
+![basic_plot](res/fig.png)
+
+图形化界面演示。
+
+![res](res/GUI_example.png)

@@ -29,6 +29,21 @@ class KalmanFilter1D:
         return self.estimate
 
 
+def use_kalman_filter(RAW_data):
+    process_variance = 0.0001
+    measurement_variance = 1000  # 测量误差
+    est_error = 2
+    initial_value = RAW_data[0]
+    kf = KalmanFilter1D(
+        process_variance, measurement_variance, est_error, initial_value
+    )
+    filtered_values = []
+    for measurement in RAW_data:
+        filtered_value = kf.update(measurement)
+        filtered_values.append(filtered_value)
+    return np.array(filtered_values)
+
+
 def test_SLP_plot():
     # 数据读取
     path = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-09-26 点火与单探针测试/data/RAW/tek0006ALL.csv"
@@ -50,17 +65,7 @@ def test_SLP_plot():
     # window_size = int(1e3)
     # voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
     # 卡尔曼滤波，感觉快一些
-    process_variance = 0.0001
-    measurement_variance = 1000  # 测量误差
-    est_error = 2
-    initial_value = voltage[0]
-    kf = KalmanFilter1D(
-        process_variance, measurement_variance, est_error, initial_value
-    )
-    filtered_values = []
-    for measurement in voltage:
-        filtered_value = kf.update(measurement)
-        filtered_values.append(filtered_value)
+    filtered_values = use_kalman_filter(voltage)
     # 找每个周期的起始点
     eps = 1e-1
     dv = np.diff(filtered_values)
@@ -75,23 +80,35 @@ def test_SLP_plot():
             start_list.append(i)
     start_times = np.array(time).take(start_list)
 
-    print(start_list)
-    print(start_times)
+    # print(start_list)
+    # print(start_times)
 
-    plt.plot(time, voltage, label="voltage")
-    plt.plot(time, filtered_values, label="filtered_values")
-    plt.vlines(
-        x=start_times,
-        ymin=min(voltage),
-        ymax=max(voltage),
-        colors="r",
-        linestyles="dashed",
-    )
-    plt.grid()
-    plt.show()
+    # 零点获取绘图
+    # plt.plot(time, voltage, label="voltage")
+    # plt.plot(time, filtered_values, label="filtered_values")
+    # plt.vlines(
+    #     x=start_times,
+    #     ymin=min(voltage),
+    #     ymax=max(voltage),
+    #     colors="r",
+    #     linestyles="dashed",
+    # )
+    # plt.grid()
+    # plt.show()
+    # return
 
-    voltage, unique_index = np.unique(voltage, return_index=True)
-    return
+    # 截取一个扫描周期计算
+    voltage = voltage[start_list[0] : start_list[1]]
+    current = current[start_list[0] : start_list[1]]
+    time = time[start_list[0] : start_list[1]]
+    # 滤波
+    # smooth_dimention = 1
+    # window_size = int(1e3)
+    # voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
+    # current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
+    voltage = use_kalman_filter(voltage)
+    current = use_kalman_filter(current)
+    # 字体和绘图设置
     config = {
         "font.family": "serif",
         "font.size": 20,
@@ -106,7 +123,7 @@ def test_SLP_plot():
         ncols=3,
         figsize=(21, 6),
     )
-    plt.subplots_adjust(wspace=0.5)
+    plt.subplots_adjust(wspace=0.6)
     # (a)
     ax[0].plot(time, voltage)
     ax[0].set_xlabel("Time (s)")
@@ -117,22 +134,29 @@ def test_SLP_plot():
     axtwin.set_ylabel("Current (A)")
     ax[0].set_title("(a) V-t and I-t")
     # (b)
-    # 电压电压排序
-    # voltage, current = zip(*sorted(zip(voltage, current)))
-    # voltage = np.array(voltage)
-    # current = np.array(current)
+    # 为方便绘制I-V曲线及后续处理，按电压排序并对电流滤波
+    tmp = [list(t) for t in zip(voltage, current)]
+    tmp.sort()
+    tmp = np.array(tmp)
+    voltage = tmp[:, 0]
+    current = tmp[:, 1]
+    current = use_kalman_filter(current)
     ax[1].plot(voltage, current)
     ax[1].set_xlabel("Voltage (V)")
     ax[1].set_ylabel("Current (A)")
     ax[1].grid()
     ax[1].set_title("(b) I-V")
     # (c) ln_I to k
-    ln_I_range = voltage > 30
-    ln_I = np.log(current[ln_I_range])
-    [k, b] = np.polyfit(voltage[ln_I_range], ln_I, 1)
+    # 选取过渡段
+    ln_I_start = np.where(voltage > 10)[0][0]
+    ln_I_end = np.where(voltage == max(voltage))[0][0]
+    voltage = voltage[ln_I_start:ln_I_end]
+    current = current[ln_I_start:ln_I_end]
+    ln_I = np.log(current)
+    [k, b] = np.polyfit(voltage, ln_I, 1)
     k_BT_e = 1 / k  # 电子温度，单位eV
-    ax[2].scatter(voltage[ln_I_range], ln_I)
-    ax[2].plot(voltage[ln_I_range], k * voltage[ln_I_range] + b, "r")
+    ax[2].scatter(voltage, ln_I)
+    ax[2].plot(voltage, k * voltage + b, "r")
     ax[2].set_xlabel("voltage")
     ax[2].set_ylabel("ln(I)")
     ax[2].legend(["ln(I) - V", "k * V + b"])

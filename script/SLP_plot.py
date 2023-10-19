@@ -46,7 +46,10 @@ def use_kalman_filter(RAW_data):
 
 def test_SLP_plot():
     # 数据读取
-    path = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-09-26 点火与单探针测试/data/RAW/tek0006ALL.csv"
+    # path = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-09-26 点火与单探针测试/data/RAW/tek0006ALL.csv"
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-10-17 点火与单探针测试/data/RAW/"
+    title = "tek0015ALL.csv"
+    path = dir + title
     with open(path, "r") as file:
         csv_data = pd.read_csv(
             file,
@@ -75,8 +78,8 @@ def test_SLP_plot():
     start_points = np.where(start_points == True)[0]
     start_list = []
     for i in start_points:
-        # 周期间隔大于1e5，跳过重复的点
-        if start_list == [] or i > start_list[-1] + 1e5:
+        # 跳过重复的点，若扫描频率为5kHz，那么一个周期对应(1/5k) / 4e-10 = 5e5个点
+        if start_list == [] or i > start_list[-1] + 3e5:
             start_list.append(i)
     start_times = np.array(time).take(start_list)
 
@@ -102,12 +105,12 @@ def test_SLP_plot():
     current = current[start_list[0] : start_list[1]]
     time = time[start_list[0] : start_list[1]]
     # 滤波
-    # smooth_dimention = 1
-    # window_size = int(1e3)
-    # voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
-    # current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
     voltage = use_kalman_filter(voltage)
     current = use_kalman_filter(current)
+    smooth_dimention = 1
+    window_size = int(1e4)
+    # voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
+    current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
     # 字体和绘图设置
     config = {
         "font.family": "serif",
@@ -121,18 +124,23 @@ def test_SLP_plot():
     fig, ax = plt.subplots(
         nrows=1,
         ncols=3,
-        figsize=(21, 6),
+        figsize=(20, 6),
     )
     plt.subplots_adjust(wspace=0.6)
     # (a)
-    ax[0].plot(time, voltage)
+    axplt1 = ax[0].plot(time, voltage)
     ax[0].set_xlabel("Time (s)")
     ax[0].set_ylabel("Voltage (V)")
     ax[0].grid()
     axtwin = ax[0].twinx()
-    axtwin.plot(time, current, color="red")
+    axplt2 = axtwin.plot(time, current, color="red")
     axtwin.set_ylabel("Current (A)")
+    # axtwin.grid()
+    # axtwin.set_ylim(-0.005, 0.06)
     ax[0].set_title("(a) V-t and I-t")
+    axplts = axplt1 + axplt2
+    labels = ["Voltage", "Current"]
+    ax[0].legend(axplts, labels, loc="upper left")
     # (b)
     # 为方便绘制I-V曲线及后续处理，按电压排序并对电流滤波
     tmp = [list(t) for t in zip(voltage, current)]
@@ -140,7 +148,8 @@ def test_SLP_plot():
     tmp = np.array(tmp)
     voltage = tmp[:, 0]
     current = tmp[:, 1]
-    current = use_kalman_filter(current)
+    # current = use_kalman_filter(current)
+    current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
     ax[1].plot(voltage, current)
     ax[1].set_xlabel("Voltage (V)")
     ax[1].set_ylabel("Current (A)")
@@ -148,8 +157,8 @@ def test_SLP_plot():
     ax[1].set_title("(b) I-V")
     # (c) ln_I to k
     # 选取过渡段
-    ln_I_start = np.where(voltage > 10)[0][0]
-    ln_I_end = np.where(voltage == max(voltage))[0][0]
+    ln_I_start = np.where(voltage > 20)[0][0]
+    ln_I_end = np.where(voltage > 0.5 * max(voltage))[0][0]
     voltage = voltage[ln_I_start:ln_I_end]
     current = current[ln_I_start:ln_I_end]
     ln_I = np.log(current)
@@ -159,14 +168,15 @@ def test_SLP_plot():
     ax[2].plot(voltage, k * voltage + b, "r")
     ax[2].set_xlabel("voltage")
     ax[2].set_ylabel("ln(I)")
-    ax[2].legend(["ln(I) - V", "k * V + b"])
+    ax[2].legend(["ln(I) - V", "k * V + b"], loc="upper left")
     ax[2].grid()
     ax[2].text(
-        x=37,
-        y=-4,
+        x=voltage[0] + 0.4 * (voltage[-1] - voltage[0]),
+        y=ln_I[0] + 0.1 * (ln_I[-1] - ln_I[0]),
         s="k=" + str(round(k, 4)) + "\n" + "k_BT_e=" + str(round(k_BT_e, 1)) + " eV",
     )
     ax[2].set_title("(c) ln(I) - V")
+    plt.savefig("res/SLP_plot/" + title.split(".")[0] + ".jpg")
     plt.show()
 
 

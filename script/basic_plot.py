@@ -85,7 +85,7 @@ def plot_curve_and_FFT(
     FFT_abs = np.abs(FFT_y)[index]
     FFT_absn = FFT_abs / len(FFT_y) * 2
     # 保存FFT结果
-    save_FFT_csv = True
+    # save_FFT_csv = True
     if save_FFT_csv:
         np.savetxt(
             save_FFT_path + title,
@@ -127,13 +127,13 @@ def plot_curve_and_FFT(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-08-30 点火与单探针测试/data/RAW/"
-    path = "tek0011ALL.csv"
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-10-31 单探针与点状放电临界点测试/data/RAW/"
+    path = "tek0000ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]  # 计算使用的采样点范围，一般来说越多计算越精确
     data_points = data_obj.read()
     # data_points = data_obj.normalize()
     fig, ax = plot_curve_and_FFT(data_points)
-    plt.savefig("res/fig.png")
+    # plt.savefig("res/fig.png")
     plt.show()

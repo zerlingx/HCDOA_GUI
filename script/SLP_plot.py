@@ -4,6 +4,7 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy
+import time
 
 
 # 卡尔曼滤波器
@@ -46,49 +47,53 @@ def use_kalman_filter(RAW_data):
 
 def test_SLP_plot():
     # 数据读取
-    # path = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-09-26 点火与单探针测试/data/RAW/tek0006ALL.csv"
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-10-17 点火与单探针测试/data/RAW/"
-    title = "tek0015ALL.csv"
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-10-22 点火与单探针测试/data/RAW/"
+    title = "tek0000ALL.csv"
     path = dir + title
     with open(path, "r") as file:
         csv_data = pd.read_csv(
             file,
             header=19,
         )
-    gap = 3e5
-    start = 5e6 - gap
-    end = 5e6 + gap
-    time = csv_data.loc[start:end, "TIME"]
-    voltage = csv_data.loc[start:end, "CH2"]
-    current = csv_data.loc[start:end, "CH1"]
+    time = csv_data.loc[:, "TIME"]
+    voltage = csv_data.loc[:, "CH2"]
+    current = csv_data.loc[:, "CH1"]
     voltage = np.array(voltage)
     current = np.array(current)
-    # 滤波，不滤波的话边缘检测容易出问题
-    # smooth_dimention = 1
-    # window_size = int(1e3)
-    # voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
-    # 卡尔曼滤波，感觉快一些
-    filtered_values = use_kalman_filter(voltage)
+    # 降采样
+    restep = int(1e3)
+    resize = int(len(voltage) / restep)
+    time = time[::restep]
+    voltage = voltage[::restep]
+    current = current[::restep]
+    # 滤波
+    smooth_dimention = 1
+    window_size = int(resize / 100)
+    voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
+    current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
     # 找每个周期的起始点
-    eps = 1e-1
-    dv = np.diff(filtered_values)
-    # dv = np.diff(voltage)
-    # dv = scipy.signal.savgol_filter(dv, window_size, smooth_dimention)
-    start_points = np.append((dv < 0), False) & (abs(voltage) <= eps)
+    eps = 1
+    start_points = abs(voltage) <= eps
     start_points = np.where(start_points == True)[0]
     start_list = []
     for i in start_points:
         # 跳过重复的点，若扫描频率为5kHz，那么一个周期对应(1/5k) / 4e-10 = 5e5个点
-        if start_list == [] or i > start_list[-1] + 3e5:
+        if start_list == [] and voltage[i + int(resize * 0.2)] < 0:
             start_list.append(i)
+        elif (
+            i > start_list[-1] + int(resize * 0.2)
+            and voltage[i - int(resize * 0.1)] > 0
+        ):
+            start_list.append(i)
+
     start_times = np.array(time).take(start_list)
 
-    # print(start_list)
-    # print(start_times)
+    print(start_list)
+    print(start_times)
 
     # 零点获取绘图
+    # voltage = voltage / max(voltage)
     # plt.plot(time, voltage, label="voltage")
-    # plt.plot(time, filtered_values, label="filtered_values")
     # plt.vlines(
     #     x=start_times,
     #     ymin=min(voltage),
@@ -96,6 +101,7 @@ def test_SLP_plot():
     #     colors="r",
     #     linestyles="dashed",
     # )
+    # plt.legend()
     # plt.grid()
     # plt.show()
     # return
@@ -104,13 +110,6 @@ def test_SLP_plot():
     voltage = voltage[start_list[0] : start_list[1]]
     current = current[start_list[0] : start_list[1]]
     time = time[start_list[0] : start_list[1]]
-    # 滤波
-    voltage = use_kalman_filter(voltage)
-    current = use_kalman_filter(current)
-    smooth_dimention = 1
-    window_size = int(1e4)
-    # voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
-    current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
     # 字体和绘图设置
     config = {
         "font.family": "serif",
@@ -148,9 +147,41 @@ def test_SLP_plot():
     tmp = np.array(tmp)
     voltage = tmp[:, 0]
     current = tmp[:, 1]
-    # current = use_kalman_filter(current)
-    current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
-    ax[1].plot(voltage, current)
+    # 找V_f
+    current = scipy.signal.savgol_filter(
+        current, int(0.05 * len(current)), smooth_dimention
+    )
+    zeropoint = abs(current) == min(abs(current))
+    zeropoint = np.where(zeropoint == True)[0]
+    if len(zeropoint) > 1:
+        zeropoint = zeropoint[0]
+    zeropoint = float(voltage[zeropoint])
+    ax[1].vlines(
+        x=zeropoint,
+        ymin=min(current) * 0.2,
+        ymax=max(current) * 0.2,
+        colors="r",
+        linestyles="dashed",
+    )
+    ax[1].text(
+        x=zeropoint + max(voltage) * 0.1,
+        y=max(current) * 0.2,
+        s="V_f=" + str(round(zeropoint, 2)),
+    )
+    # 滤波，画I-V曲线和计算dI/dV
+    axplt1 = ax[1].plot(voltage, current)
+    # dstep = 2
+    # dI = np.diff(current[:: int(resize / dstep)]) / np.diff(
+    #     voltage[:: int(resize / dstep)]
+    # )
+    # dI = scipy.signal.savgol_filter(dI, int(0.05 * len(dI)), smooth_dimention)
+    # dIV = voltage[:: int(resize / 10)]
+    # axtwin = ax[1].twinx()
+    # axplt2 = ax[1].plot(dIV[1:], dI)
+    # axtwin.set_ylabel("dI/dV (mA/V)")
+    # axplts = axplt1 + axplt2
+    # labels = ["Current", "dI/dV"]
+    # ax[1].legend(axplts, labels, loc="upper left")
     ax[1].set_xlabel("Voltage (V)")
     ax[1].set_ylabel("Current (A)")
     ax[1].grid()
@@ -170,10 +201,27 @@ def test_SLP_plot():
     ax[2].set_ylabel("ln(I)")
     ax[2].legend(["ln(I) - V", "k * V + b"], loc="upper left")
     ax[2].grid()
+    # 电子数密度
+    # 暂时还没有测到饱和电子电流，把测到的最大电流作为饱和电子电流吧 (A)
+    I_e0 = max(current)
+    e = 1.6e-19
+    # 探针直径、长度 (m)
+    d_p = 0.8e-3
+    l_p = 5.5e-3
+    # 面积，计算侧面加一个端面
+    A_p = np.pi * d_p * l_p + np.pi / 4.0 * d_p**2
+    m_e = 9.1e-31
+    T_e = k_BT_e
+    n_e = I_e0 / (e * A_p) * np.sqrt(2 * np.pi * m_e / (e * T_e))
     ax[2].text(
         x=voltage[0] + 0.4 * (voltage[-1] - voltage[0]),
         y=ln_I[0] + 0.1 * (ln_I[-1] - ln_I[0]),
-        s="k=" + str(round(k, 4)) + "\n" + "k_BT_e=" + str(round(k_BT_e, 1)) + " eV",
+        s="k="
+        + str(round(k, 4))
+        + "\nk_BT_e="
+        + str(round(k_BT_e, 1))
+        + " eV\nn_e="
+        + "{:.2e}".format(n_e),
     )
     ax[2].set_title("(c) ln(I) - V")
     plt.savefig("res/SLP_plot/" + title.split(".")[0] + ".jpg")
@@ -181,4 +229,7 @@ def test_SLP_plot():
 
 
 if __name__ == "__main__":
+    strattime = time.time()
     test_SLP_plot()
+    endtime = time.time()
+    print("run time =", endtime - strattime)

@@ -117,5 +117,5 @@ if __name__ == "__main__":
             color="black",
             linestyle="--",
         )
-    plt.savefig("res/FFT_3D.png")
+    # plt.savefig("res/FFT_3D.png")
     plt.show()

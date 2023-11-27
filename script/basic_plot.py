@@ -75,8 +75,10 @@ def plot_curve_and_FFT(
     ax[0].legend(loc="upper right")
     ax[0].grid()
 
+    # 默认用CH4电流做FFT算频谱
     FFT_data = res[4]
-    Fre, FFT_y = FFT(dT=4e-10, FFT_data=FFT_data)
+    dT = res[0][1] - res[0][0]
+    Fre, FFT_y = FFT(dT=dT, FFT_data=FFT_data)
     # 设置要绘制频率范围
     fre_min = fre_range[0]
     fre_max = fre_range[1]
@@ -127,7 +129,7 @@ def plot_curve_and_FFT(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-10-31 单探针与点状放电临界点测试/data/RAW/"
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-07 单探针与发射探针测试/data/RAW/"
     path = "tek0000ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)

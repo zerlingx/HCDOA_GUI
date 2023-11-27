@@ -47,8 +47,8 @@ def use_kalman_filter(RAW_data):
 
 def test_SLP_plot():
     # 数据读取
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-10-22 点火与单探针测试/data/RAW/"
-    title = "tek0000ALL.csv"
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-05 单探针与点状放电临界点测试/data/RAW/"
+    title = "tek0015ALL.csv"
     path = dir + title
     with open(path, "r") as file:
         csv_data = pd.read_csv(
@@ -56,12 +56,12 @@ def test_SLP_plot():
             header=19,
         )
     time = csv_data.loc[:, "TIME"]
-    voltage = csv_data.loc[:, "CH2"]
-    current = csv_data.loc[:, "CH1"]
+    voltage = csv_data.loc[:, "CH1"]
+    current = csv_data.loc[:, "CH2"]
     voltage = np.array(voltage)
     current = np.array(current)
     # 降采样
-    restep = int(1e3)
+    restep = int(1e2)
     resize = int(len(voltage) / restep)
     time = time[::restep]
     voltage = voltage[::restep]
@@ -72,24 +72,11 @@ def test_SLP_plot():
     voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
     current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
     # 找每个周期的起始点
-    eps = 1
-    start_points = abs(voltage) <= eps
-    start_points = np.where(start_points == True)[0]
-    start_list = []
-    for i in start_points:
-        # 跳过重复的点，若扫描频率为5kHz，那么一个周期对应(1/5k) / 4e-10 = 5e5个点
-        if start_list == [] and voltage[i + int(resize * 0.2)] < 0:
-            start_list.append(i)
-        elif (
-            i > start_list[-1] + int(resize * 0.2)
-            and voltage[i - int(resize * 0.1)] > 0
-        ):
-            start_list.append(i)
-
+    start_list = [0, len(voltage) - 1]
     start_times = np.array(time).take(start_list)
 
-    print(start_list)
-    print(start_times)
+    # print(start_list)
+    # print(start_times)
 
     # 零点获取绘图
     # voltage = voltage / max(voltage)
@@ -125,28 +112,36 @@ def test_SLP_plot():
         ncols=3,
         figsize=(20, 6),
     )
-    plt.subplots_adjust(wspace=0.6)
+    plt.subplots_adjust(
+        wspace=0.6,
+        left=0.05,
+        right=0.98,
+    )
     # (a)
     axplt1 = ax[0].plot(time, voltage)
     ax[0].set_xlabel("Time (s)")
     ax[0].set_ylabel("Voltage (V)")
-    ax[0].grid()
+    # ax[0].grid()
     axtwin = ax[0].twinx()
     axplt2 = axtwin.plot(time, current, color="red")
     axtwin.set_ylabel("Current (A)")
-    # axtwin.grid()
+    axtwin.grid()
     # axtwin.set_ylim(-0.005, 0.06)
     ax[0].set_title("(a) V-t and I-t")
     axplts = axplt1 + axplt2
     labels = ["Voltage", "Current"]
     ax[0].legend(axplts, labels, loc="upper left")
     # (b)
+    # (b-1) I-V曲线，找电流零点时电压为悬浮电压V_f
     # 为方便绘制I-V曲线及后续处理，按电压排序并对电流滤波
     tmp = [list(t) for t in zip(voltage, current)]
     tmp.sort()
     tmp = np.array(tmp)
     voltage = tmp[:, 0]
     current = tmp[:, 1]
+    # 减掉等效串联耦合电阻的电流
+    # R_empty = 8747
+    # current = current - voltage / R_empty
     # 找V_f
     current = scipy.signal.savgol_filter(
         current, int(0.05 * len(current)), smooth_dimention
@@ -155,59 +150,93 @@ def test_SLP_plot():
     zeropoint = np.where(zeropoint == True)[0]
     if len(zeropoint) > 1:
         zeropoint = zeropoint[0]
-    zeropoint = float(voltage[zeropoint])
+    V_f = float(voltage[zeropoint][0])
+    range_I = max(current) - min(current)
     ax[1].vlines(
-        x=zeropoint,
-        ymin=min(current) * 0.2,
-        ymax=max(current) * 0.2,
+        x=V_f,
+        ymin=0 - 0.1 * range_I,
+        ymax=0 + 0.1 * range_I,
         colors="r",
         linestyles="dashed",
     )
     ax[1].text(
-        x=zeropoint + max(voltage) * 0.1,
-        y=max(current) * 0.2,
-        s="V_f=" + str(round(zeropoint, 2)),
+        x=V_f + max(voltage) * 0.1,
+        y=max(current) * 0.1,
+        s="V_f=" + str(round(V_f, 2)) + " V",
     )
-    # 滤波，画I-V曲线和计算dI/dV
     axplt1 = ax[1].plot(voltage, current)
-    # dstep = 2
-    # dI = np.diff(current[:: int(resize / dstep)]) / np.diff(
-    #     voltage[:: int(resize / dstep)]
-    # )
-    # dI = scipy.signal.savgol_filter(dI, int(0.05 * len(dI)), smooth_dimention)
-    # dIV = voltage[:: int(resize / 10)]
-    # axtwin = ax[1].twinx()
-    # axplt2 = ax[1].plot(dIV[1:], dI)
-    # axtwin.set_ylabel("dI/dV (mA/V)")
-    # axplts = axplt1 + axplt2
-    # labels = ["Current", "dI/dV"]
-    # ax[1].legend(axplts, labels, loc="upper left")
+    # (b-2) dI/dV-V曲线，找其拐点为等离子体电势V_p
+    # 降采样
+    dstep = 100
+    start = int(0.1 * len(current))
+    end = int(0.9 * len(current))
+    dI = np.diff(current[start:end:dstep]) / np.diff(voltage[start:end:dstep])
+    dI = scipy.signal.savgol_filter(dI, int(0.05 * len(dI)), smooth_dimention)
+    dIV = voltage[start:end:dstep]
+    axtwin = ax[1].twinx()
+    axplt2 = axtwin.plot(dIV[1:], dI, color="orange")
+    axtwin.set_ylabel("dI/dV (mA/V)")
+    axplts = axplt1 + axplt2
+    labels = ["Current", "dI/dV"]
+    turn_point = np.where(dI == max(dI))[0]
+    V_p = float(dIV[turn_point][0])
+    range_dI = max(dI) - min(dI)
+    axtwin.vlines(
+        x=V_p,
+        ymin=max(dI) - 0.1 * range_dI,
+        ymax=max(dI) + 0.1 * range_dI,
+        colors="r",
+        linestyles="dashed",
+    )
+    axtwin.text(
+        x=V_p + max(dIV) * 0.1,
+        y=max(dI),
+        s="V_p=" + str(round(V_p, 2)) + " V",
+    )
+    ax[1].legend(axplts, labels, loc="upper left")
     ax[1].set_xlabel("Voltage (V)")
     ax[1].set_ylabel("Current (A)")
     ax[1].grid()
-    ax[1].set_title("(b) I-V")
+    ax[1].set_title("(b) I-V and dI/dV-V")
+    # (b-3) 找离子、电子饱和电流
+    start = np.where(voltage > 0.9 * min(voltage))[0][0]
+    end = np.where(voltage > 0.1 * min(voltage))[0][0]
+    I_i0 = np.mean(current[start:end])
+    ax[1].hlines(
+        xmin=0.9 * min(voltage),
+        xmax=0.1 * min(voltage),
+        y=I_i0,
+        colors="r",
+        linestyles="dashed",
+    )
+    ax[1].text(
+        x=0.9 * min(voltage),
+        y=I_i0 + (max(current) - min(current)) * 0.1,
+        s="I_i0=" + str(round(I_i0, 5)) + " A",
+    )
     # (c) ln_I to k
     # 选取过渡段
-    ln_I_start = np.where(voltage > 20)[0][0]
-    ln_I_end = np.where(voltage > 0.5 * max(voltage))[0][0]
+    ln_I_start = np.where(voltage > V_f + 1)[0][0]
+    ln_I_end = np.where(voltage > V_p)[0][0]
     voltage = voltage[ln_I_start:ln_I_end]
     current = current[ln_I_start:ln_I_end]
-    ln_I = np.log(current)
+    # 过渡段特性记得把离子电流加上
+    ln_I = np.log(current + abs(I_i0))
     [k, b] = np.polyfit(voltage, ln_I, 1)
     k_BT_e = 1 / k  # 电子温度，单位eV
     ax[2].scatter(voltage, ln_I)
     ax[2].plot(voltage, k * voltage + b, "r")
     ax[2].set_xlabel("voltage")
     ax[2].set_ylabel("ln(I)")
-    ax[2].legend(["ln(I) - V", "k * V + b"], loc="upper left")
+    ax[2].legend(["ln(I)", "k*V+b"], loc="upper left")
     ax[2].grid()
     # 电子数密度
     # 暂时还没有测到饱和电子电流，把测到的最大电流作为饱和电子电流吧 (A)
     I_e0 = max(current)
     e = 1.6e-19
-    # 探针直径、长度 (m)
-    d_p = 0.8e-3
-    l_p = 5.5e-3
+    # 探针直径、长度 (m)，\phi 0.12 mm细钨丝，暴露长度3 mm
+    d_p = 0.12e-3
+    l_p = 3e-3
     # 面积，计算侧面加一个端面
     A_p = np.pi * d_p * l_p + np.pi / 4.0 * d_p**2
     m_e = 9.1e-31
@@ -221,9 +250,10 @@ def test_SLP_plot():
         + "\nk_BT_e="
         + str(round(k_BT_e, 1))
         + " eV\nn_e="
-        + "{:.2e}".format(n_e),
+        + "{:.2e}".format(n_e)
+        + " m^-3",
     )
-    ax[2].set_title("(c) ln(I) - V")
+    ax[2].set_title("(c) ln(I)-V")
     plt.savefig("res/SLP_plot/" + title.split(".")[0] + ".jpg")
     plt.show()
 

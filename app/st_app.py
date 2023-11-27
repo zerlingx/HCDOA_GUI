@@ -44,7 +44,7 @@ st.sidebar.markdown("## 01-1 选择数据")
 if "DIR" not in st.session_state:
     st.session_state[
         "DIR"
-    ] = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-10-17 点火与单探针测试/data/RAW/"
+    ] = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-07 单探针与发射探针测试/data/RAW/"
 dir = st.session_state["DIR"]
 dir = st.text_input("输入数据文件夹路径", dir, help="路径建议使用正斜杠。")
 # dir = eval(repr(dir).replace("\\", "/"))
@@ -61,7 +61,7 @@ except:
 
 # 选择数据文件
 if "PATH" not in st.session_state:
-    st.session_state["PATH"] = "tek0000ALL.csv"
+    st.session_state["PATH"] = "tek0000LL.csv"
 path = st.session_state["PATH"]
 try:
     path = st.selectbox(
@@ -112,17 +112,31 @@ with col4:
     plot_channels = st.multiselect("选择绘图通道", [1, 2, 3, 4], default=[4])
 
 # 选择绘图使用数据范围
-plot_range = st.slider(
-    "绘图使用数据占比(%)", min_value=1, max_value=100, value=1, help="从读取数据时间中点向两侧延申。"
-)
-plot_range = plot_range / 100
+col1, col2 = st.columns(2)
+with col1:
+    plot_range = st.slider(
+        "绘图使用数据占比(%)",
+        min_value=1,
+        max_value=100,
+        step=1,
+        value=10,
+        help="从读取数据时间中点向两侧延申。",
+    )
+with col2:
+    plot_amp = st.slider(
+        "波形放大倍率",
+        min_value=1,
+        max_value=100,
+        value=1,
+    )
+plot_range = plot_range / 100 / plot_amp
 # 选择绘图程序中FFT处理频率范围
 log_axis = []
 log_axis.append(0)
 for i in np.arange(-1, 0, 0.1):
-    log_axis.append(pow(10, i))
+    log_axis.append(round(pow(10, i)))
 for i in np.arange(0, 8.1, 0.1):
-    log_axis.append(pow(10, i))
+    log_axis.append(round(pow(10, i)))
 fre_range = st.select_slider(
     "FFT处理频率范围",
     options=log_axis,

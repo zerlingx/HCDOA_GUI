@@ -1,10 +1,12 @@
-import pytest
 import numpy as np
-import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy
 import time
+import sys
+
+sys.path.append("./")
+import constant.plasma_parameters as pp
 
 
 def test_SLP_plot():
@@ -185,7 +187,8 @@ def test_SLP_plot():
     # 过渡段特性记得把离子电流加上
     ln_I = np.log(current + abs(I_i0))
     [k, b] = np.polyfit(voltage, ln_I, 1)
-    k_BT_e = 1 / k  # 电子温度，单位eV
+    # 这种方法计算出来的电子温度T_e实际上是k_B*T_e/e，单位eV
+    T_e = 1 / k
     ax[2].scatter(voltage, ln_I)
     ax[2].plot(voltage, k * voltage + b, "r")
     ax[2].set_xlabel("voltage")
@@ -195,22 +198,24 @@ def test_SLP_plot():
     # 电子数密度
     # 暂时还没有测到饱和电子电流，把测到的最大电流作为饱和电子电流吧 (A)
     I_e0 = max(current)
-    e = 1.6e-19
+    e = pp.Plasma().constants["E_ELEC"]
+    m_e = pp.Plasma().constants["M_ELECTRON"]
+    k_B = pp.Plasma().constants["K_BOLTZMANN"]
     # 探针直径、长度 (m)，\phi 0.12 mm细钨丝，暴露长度3 mm
     d_p = 0.12e-3
     l_p = 3e-3
     # 面积，计算侧面加一个端面
     A_p = np.pi * d_p * l_p + np.pi / 4.0 * d_p**2
-    m_e = 9.1e-31
-    T_e = k_BT_e
+
     n_e = I_e0 / (e * A_p) * np.sqrt(2 * np.pi * m_e / (e * T_e))
+    # n_e = 3.7e8 * I_e0 * 1e3 / (A_p * 1e4 * np.sqrt(T_e)) * 1e6
     ax[2].text(
         x=voltage[0] + 0.4 * (voltage[-1] - voltage[0]),
         y=ln_I[0] + 0.1 * (ln_I[-1] - ln_I[0]),
         s="k="
         + str(round(k, 4))
         + "\nk_BT_e="
-        + str(round(k_BT_e, 1))
+        + str(round(T_e, 1))
         + " eV\nn_e="
         + "{:.2e}".format(n_e)
         + " m^-3",

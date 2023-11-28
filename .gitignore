@@ -3,3 +3,4 @@
 /res
 /tmp
 /tmp.py
+*/__pycache__

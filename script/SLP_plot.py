@@ -12,7 +12,8 @@ import constant.plasma_parameters as pp
 def test_SLP_plot():
     # 数据读取
     dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-05 单探针与点状放电临界点测试/data/RAW/"
-    title = "tek0015ALL.csv"
+    # dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-12-03 放电振荡特性与探针测试/data/RAW/"
+    title = "tek0014ALL.csv"
     path = dir + title
     with open(path, "r") as file:
         csv_data = pd.read_csv(

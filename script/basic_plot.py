@@ -129,7 +129,7 @@ def plot_curve_and_FFT(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-07 单探针与发射探针测试/data/RAW/"
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-05 单探针与点状放电临界点测试/data/RAW/"
     path = "tek0000ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)

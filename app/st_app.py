@@ -44,7 +44,7 @@ st.sidebar.markdown("## 01-1 选择数据")
 if "DIR" not in st.session_state:
     st.session_state[
         "DIR"
-    ] = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-07 单探针与发射探针测试/data/RAW/"
+    ] = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-05 单探针与点状放电临界点测试/data/RAW/"
 dir = st.session_state["DIR"]
 dir = st.text_input("输入数据文件夹路径", dir, help="路径建议使用正斜杠。")
 # dir = eval(repr(dir).replace("\\", "/"))
@@ -61,7 +61,7 @@ except:
 
 # 选择数据文件
 if "PATH" not in st.session_state:
-    st.session_state["PATH"] = "tek0000LL.csv"
+    st.session_state["PATH"] = "tek0000ALL.csv"
 path = st.session_state["PATH"]
 try:
     path = st.selectbox(

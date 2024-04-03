@@ -8,60 +8,59 @@ import sys
 sys.path.append("./")
 import constant.plasma_parameters as pp
 
+sys.path.append("./script")
+import data
 
-def test_SLP_plot():
+
+def SLP_read_and_plot(
+    data_points,
+    title="",
+):
     # 数据读取
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-05 单探针与点状放电临界点测试/data/RAW/"
-    # dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-12-03 放电振荡特性与探针测试/data/RAW/"
-    title = "tek0014ALL.csv"
-    path = dir + title
-    with open(path, "r") as file:
-        csv_data = pd.read_csv(
-            file,
-            header=19,
-        )
-    time = csv_data.loc[:, "TIME"]
-    voltage = csv_data.loc[:, "CH1"]
-    current = csv_data.loc[:, "CH2"]
+    # dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2024-03 一号阴极测试/2024-03-07 羽流诊断与色散关系测试/data/RAW/"
+    # title = "tek0000ALL.csv"
+    # path = dir + title
+    # with open(path, "r") as file:
+    #     csv_data = pd.read_csv(
+    #         file,
+    #         header=19,
+    #     )
+    # time = csv_data.loc[:, "TIME"]
+    # voltage = csv_data.loc[:, "CH1"]
+    # current = csv_data.loc[:, "CH2"]
+    time = data_points[0]
+    voltage = data_points[1]
+    current = data_points[2]
+
     voltage = np.array(voltage)
     current = np.array(current)
-    # 降采样
-    restep = int(1e2)
-    resize = int(len(voltage) / restep)
-    time = time[::restep]
-    voltage = voltage[::restep]
-    current = current[::restep]
-    # 滤波
+    rescale = 100
+    restep = int(len(current) / rescale)
+    dI = current[::restep]
+    dI_t = time[::restep]
+    dI = np.diff(dI)
+    max_dI = max(dI)
+    # dI = scipy.signal.savgol_filter(dI, 3, 1)
+    # plt.plot(dI)
+    # plt.show()
+    # return
+    # 将大于0.5*max_dI作为锯齿波周期起始的判据
+    stages = np.where(dI > 0.6 * max_dI)
+    stage_1 = stages[0][0] * restep + 1000
+    stage_2 = stages[0][1] * restep - 1000
+    time = time[stage_1:stage_2]
+    voltage = voltage[stage_1:stage_2]
+    current = current[stage_1:stage_2]
     smooth_dimention = 1
-    window_size = int(resize / 100)
+    window_size = int(len(voltage) / 100)
     voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
     current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
-    # 找每个周期的起始点
-    start_list = [0, len(voltage) - 1]
-    start_times = np.array(time).take(start_list)
 
-    # print(start_list)
-    # print(start_times)
-
-    # 零点获取绘图
-    # voltage = voltage / max(voltage)
-    # plt.plot(time, voltage, label="voltage")
-    # plt.vlines(
-    #     x=start_times,
-    #     ymin=min(voltage),
-    #     ymax=max(voltage),
-    #     colors="r",
-    #     linestyles="dashed",
-    # )
-    # plt.legend()
+    # plt.plot(time, voltage / max(voltage), time, current / max(current))
     # plt.grid()
     # plt.show()
     # return
 
-    # 截取一个扫描周期计算
-    voltage = voltage[start_list[0] : start_list[1]]
-    current = current[start_list[0] : start_list[1]]
-    time = time[start_list[0] : start_list[1]]
     # 字体和绘图设置
     config = {
         "font.family": "serif",
@@ -78,7 +77,7 @@ def test_SLP_plot():
         figsize=(20, 6),
     )
     plt.subplots_adjust(
-        wspace=0.6,
+        wspace=0.5,
         left=0.05,
         right=0.98,
     )
@@ -86,12 +85,10 @@ def test_SLP_plot():
     axplt1 = ax[0].plot(time, voltage)
     ax[0].set_xlabel("Time (s)")
     ax[0].set_ylabel("Voltage (V)")
-    # ax[0].grid()
     axtwin = ax[0].twinx()
     axplt2 = axtwin.plot(time, current, color="red")
     axtwin.set_ylabel("Current (A)")
     axtwin.grid()
-    # axtwin.set_ylim(-0.005, 0.06)
     ax[0].set_title("(a) V-t and I-t")
     axplts = axplt1 + axplt2
     labels = ["Voltage", "Current"]
@@ -109,7 +106,7 @@ def test_SLP_plot():
     # current = current - voltage / R_empty
     # 找V_f
     current = scipy.signal.savgol_filter(
-        current, int(0.05 * len(current)), smooth_dimention
+        current, int(len(current) / 100), smooth_dimention
     )
     zeropoint = abs(current) == min(abs(current))
     zeropoint = np.where(zeropoint == True)[0]
@@ -136,7 +133,7 @@ def test_SLP_plot():
     start = int(0.1 * len(current))
     end = int(0.9 * len(current))
     dI = np.diff(current[start:end:dstep]) / np.diff(voltage[start:end:dstep])
-    dI = scipy.signal.savgol_filter(dI, int(0.05 * len(dI)), smooth_dimention)
+    dI = scipy.signal.savgol_filter(dI, int(len(dI) / 20), smooth_dimention)
     dIV = voltage[start:end:dstep]
     axtwin = ax[1].twinx()
     axplt2 = axtwin.plot(dIV[1:], dI, color="orange")
@@ -223,11 +220,21 @@ def test_SLP_plot():
     )
     ax[2].set_title("(c) ln(I)-V")
     plt.savefig("res/SLP_plot/" + title.split(".")[0] + ".jpg")
-    plt.show()
+    # plt.show()
+
+    return fig, V_f, T_e, n_e
 
 
 if __name__ == "__main__":
     strattime = time.time()
-    test_SLP_plot()
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2024-03 一号阴极测试/2024-03-07 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0015ALL.csv"
+    default_path = dir + path
+    data_obj = data.data(default_path)
+    data_points = data_obj.read()
+    fig, V_f, T_e, n_e = SLP_read_and_plot(data_points)
+    plt.savefig("res/SLP_tmp_plot.jpg")
+    plt.plot()
+    plt.show()
     endtime = time.time()
     print("run time =", endtime - strattime)

@@ -39,8 +39,9 @@ def plot_curve_and_FFT(
     title="",
     fre_range=[1e1, 1e6],
     plot_channels=[1, 2, 3, 4],
+    FFT_channel=4,
     save_FFT_csv=False,
-    save_FFT_path="res/current_FFT/",
+    save_FFT_path="res/FFT/",
 ):
     res = data_points
 
@@ -69,14 +70,14 @@ def plot_curve_and_FFT(
             ax[0].plot(res[0][plot_index], res[i][plot_index], label="CH" + str(i))
         except:
             pass
-    ax[0].set_title("(a) Scope data (Anode Voltage and Current).")
+    ax[0].set_title("(a) Scope data.")
     ax[0].set_xlabel("Time (s)")
-    ax[0].set_ylabel("Voltage (V) / Current (A)")
+    ax[0].set_ylabel("Voltage (V) / Current (A) / Normalized (a.u.)")
     ax[0].legend(loc="upper right")
     ax[0].grid()
 
     # 默认用CH4电流做FFT算频谱
-    FFT_data = res[4]
+    FFT_data = res[FFT_channel]
     dT = res[0][1] - res[0][0]
     Fre, FFT_y = FFT(dT=dT, FFT_data=FFT_data)
     # 设置要绘制频率范围
@@ -90,7 +91,7 @@ def plot_curve_and_FFT(
     # save_FFT_csv = True
     if save_FFT_csv:
         np.savetxt(
-            save_FFT_path + title,
+            save_FFT_path + title + str(FFT_channel),
             np.array([Fre, FFT_absn]).T,
             delimiter=",",
             fmt="%f",
@@ -103,7 +104,7 @@ def plot_curve_and_FFT(
     # FFT_fitted = maximum_filter1d(FFT_abs, window_size)
     FFT_fitted = scipy.signal.savgol_filter(FFT_absn, window_size, smooth_dimention)
 
-    ax[1].plot(Fre, FFT_absn, label="FFT_current")
+    ax[1].plot(Fre, FFT_absn, label="FFT")
     ax[1].plot(Fre, FFT_fitted, label="FFT_fitted")
     # 显示频谱幅值最大值
     max_A = max(FFT_absn)
@@ -119,7 +120,7 @@ def plot_curve_and_FFT(
         "max_A_pos=" + str(max_A_pos) + "\nmax_A=" + str(max_A),
         xy=(max_A_pos * 1.1, max_A * 0.7),
     )
-    ax[1].set_title("(b) FFT_current")
+    ax[1].set_title("(b) FFT")
     ax[1].set_xlabel("Frequency (Hz)")
     ax[1].set_ylabel("Amplitude")
     ax[1].legend(loc="upper right")
@@ -129,13 +130,13 @@ def plot_curve_and_FFT(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-05 单探针与点状放电临界点测试/data/RAW/"
-    path = "tek0000ALL.csv"
+    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-12-03 放电振荡特性与探针测试/data/RAW/"
+    path = "tek0010ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]  # 计算使用的采样点范围，一般来说越多计算越精确
     data_points = data_obj.read()
     # data_points = data_obj.normalize()
-    fig, ax = plot_curve_and_FFT(data_points)
-    # plt.savefig("res/fig.png")
+    fig, ax = plot_curve_and_FFT(data_points, fre_range=[1e1, 5e6])
+    # plt.savefig("res/20231203_NO10_fre_5e6.png")
     plt.show()

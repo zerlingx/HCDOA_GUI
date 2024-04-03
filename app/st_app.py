@@ -42,9 +42,9 @@ st.sidebar.markdown("## 01-1 选择数据")
 
 # 选择数据文件夹
 if "DIR" not in st.session_state:
-    st.session_state[
-        "DIR"
-    ] = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-10 哈工大阴极在北理工测试/2023-11-05 单探针与点状放电临界点测试/data/RAW/"
+    st.session_state["DIR"] = (
+        "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-03-07 羽流诊断与色散关系测试/data/RAW/"
+    )
 dir = st.session_state["DIR"]
 dir = st.text_input("输入数据文件夹路径", dir, help="路径建议使用正斜杠。")
 # dir = eval(repr(dir).replace("\\", "/"))
@@ -85,13 +85,22 @@ def load_data_points(dir_path, read_range=[], normalize=False):
 
 
 @st.cache_data()
-def plot_data_points(plot_data, plot_range, fre_range, plot_channels=[4]):
+def plot_data_points(
+    plot_data,
+    plot_range,
+    fre_range,
+    plot_channels=[4],
+    FFT_channel=4,
+    save_FFT_csv=False,
+):
     fig, ax = basic_plot.plot_curve_and_FFT(
         data_points=plot_data,
         plot_range=plot_range,
         title=path,
         fre_range=fre_range,
         plot_channels=plot_channels,
+        FFT_channel=FFT_channel,
+        save_FFT_csv=save_FFT_csv,
     )
     return fig
 
@@ -106,10 +115,18 @@ with col2:
     )
 read_range = [int(read_start), int(read_end)]
 with col3:
-    st.markdown("归一化选项", help="此选项将在读取数据时将其归一化，可能增加读取时间。")
+    st.markdown("是否归一化", help="此选项将在读取数据时将其归一化，可能增加读取时间。")
     normalize = st.checkbox("数据归一化", value=False)
 with col4:
+    st.markdown("是否保存FFT", help="保存到'res/FFT/title + str(FFT_channel)'。")
+    save_FFT_csv = st.checkbox("保存FFT数据", value=False)
+
+col1, col2, col3 = st.columns(3)
+with col1:
     plot_channels = st.multiselect("选择绘图通道", [1, 2, 3, 4], default=[4])
+with col2:
+    FFT_channel = st.selectbox("选择FFT通道", [1, 2, 3, 4])
+
 
 # 选择绘图使用数据范围
 col1, col2 = st.columns(2)
@@ -146,7 +163,14 @@ fre_range = st.select_slider(
 # 加载输入并绘图
 try:
     data_points = load_data_points(dir + path, read_range, normalize)
-    fig = plot_data_points(data_points, plot_range, fre_range, plot_channels)
+    fig = plot_data_points(
+        data_points,
+        plot_range,
+        fre_range,
+        plot_channels,
+        FFT_channel,
+        save_FFT_csv,
+    )
     st.pyplot(fig)
     # st.image("res/fig.png")
 except:

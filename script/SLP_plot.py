@@ -227,13 +227,13 @@ def SLP_read_and_plot(
 
 if __name__ == "__main__":
     strattime = time.time()
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2024-03 一号阴极测试/2024-03-07 羽流诊断与色散关系测试/data/RAW/"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-03-07 羽流诊断与色散关系测试/data/RAW/"
     path = "tek0015ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()
     fig, V_f, T_e, n_e = SLP_read_and_plot(data_points)
-    plt.savefig("res/SLP_tmp_plot.jpg")
+    # plt.savefig("res/SLP_tmp_plot.jpg")
     plt.plot()
     plt.show()
     endtime = time.time()

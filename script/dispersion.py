@@ -70,7 +70,7 @@ def use_KDE(x, y, values):
     grid = np.vstack([grid_x.ravel(), grid_y.ravel()])
     kde_values = kde(grid).reshape(grid_x.shape)
     kde_values = kde_values / np.max(kde_values)
-    # 绘制热力图
+    # 绘制密度/热力图
     plt.figure(figsize=(8, 6))
     plt.pcolormesh(
         grid_x,
@@ -80,9 +80,6 @@ def use_KDE(x, y, values):
         cmap="jet",  # coolwarm/viridis效果也不错
     )
     plt.colorbar(label="FFT_psd_norm")
-    # plt.title("Heatmap from Weighted Scatter Data")
-    # plt.xlabel("X axis")
-    # plt.ylabel("Y axis")
     plt.show()
 
 
@@ -131,10 +128,10 @@ def dispersion(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-03-29 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0034ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0497ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]
     data_points = data_obj.read()
-    dispersion(data_points, fre_range=[1e1, 3e6])
+    dispersion(data_points, fre_range=[1e1, 5e5])

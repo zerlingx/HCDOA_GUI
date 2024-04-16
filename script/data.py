@@ -7,7 +7,7 @@ class data:
         self.header = 19
         self.columns = ["TIME", "CH1", "CH2", "CH3", "CH4"]
         self.read_range = []
-        self.ifprint = True
+        self.ifprint = False
         self.return_data = []
         self.normalized_data = []
 

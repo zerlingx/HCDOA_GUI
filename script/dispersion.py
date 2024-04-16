@@ -60,7 +60,7 @@ def k(omega):
 
 
 # 核估计法，将散点数据变为密度图
-def use_KDE(x, y, values):
+def use_KDE_plot(x, y, values):
     xy = np.vstack([x, y])
     kde = gaussian_kde(xy, weights=values)
     # 在规则网格上评估 KDE
@@ -114,7 +114,7 @@ def dispersion(
     for i in range(len(Fre)):
         values.append((FFT_psd_norm[0][i] + FFT_psd_norm[1][i]) / 2)
     # KDE
-    use_KDE(ks, Fre, values)
+    use_KDE_plot(ks, Fre, values)
     # 散点图
     # plt.scatter(ks, Fre, c=(FFT_psd_norm[0] + FFT_psd_norm[1]) / 2, s=1)
     # plt.colorbar(label="Value")

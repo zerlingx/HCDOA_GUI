@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
-from scipy.stats import gaussian_kde
 from scipy.interpolate import griddata
 
 sys.path.append("./script")
@@ -23,19 +22,6 @@ def read_coordinates(path, header=0):
         r = np.array(csv_data.loc[:, "r"])
         z = np.array(csv_data.loc[:, "z"])
         return num, r, z
-
-
-def use_KDE(x, y, values):
-    xy = np.vstack([x, y])
-    kde = gaussian_kde(xy, weights=values)
-    # 在规则网格上评估 KDE
-    grid_x, grid_y = np.mgrid[
-        np.min(x) : np.max(x) : 100j, np.min(y) : np.max(y) : 100j
-    ]  # 100j 表示100x100的网格
-    grid = np.vstack([grid_x.ravel(), grid_y.ravel()])
-    kde_values = kde(grid).reshape(grid_x.shape)
-    # kde_values = kde_values / np.max(kde_values)
-    return grid_x, grid_y, kde_values
 
 
 def save_index_and_SLP_data(save_path, num, r, z, V_ps, T_es, n_es):
@@ -112,7 +98,7 @@ def get_plot_grid(r, z, values):
 
 
 def plot_SLP_spacial():
-    result_path = "res/SLP_spacial/p2_SLP_spacial.csv"
+    result_path = "res/SLP_spacial/p3_SLP_spacial.csv"
     with open(result_path, "r") as file:
         data = pd.read_csv(file)
         num = data.loc[:, "num"]
@@ -156,6 +142,54 @@ def plot_SLP_spacial():
     plt.show()
 
 
+def get_SLP_along_z_or_r(result_path):
+    with open(result_path, "r") as file:
+        data = pd.read_csv(file)
+        num = data.loc[:, "num"]
+        r = data.loc[:, "r"]
+        z = data.loc[:, "z"]
+        V_ps = data.loc[:, "V_p"]
+        T_es = data.loc[:, "T_e"]
+        n_es = data.loc[:, "n_e"]
+    index = r == min(r)
+    res_z = z[index]
+    z_n_es = n_es[index]
+    index = z > 19
+    res_r = r[index]
+    r_n_es = n_es[index]
+    return res_z, z_n_es, res_r, r_n_es
+
+
+def plot_SLP_along_z_or_r():
+    result_path = "res/SLP_spacial/p1_SLP_spacial.csv"
+    p1_z, p1_z_n_es, p1_r, p1_r_n_es = get_SLP_along_z_or_r(result_path)
+    result_path = "res/SLP_spacial/p2_SLP_spacial.csv"
+    p2_z, p2_z_n_es, p2_r, p2_r_n_es = get_SLP_along_z_or_r(result_path)
+    result_path = "res/SLP_spacial/p3_SLP_spacial.csv"
+    p3_z, p3_z_n_es, p3_r, p3_r_n_es = get_SLP_along_z_or_r(result_path)
+    # 绘图
+    fig, ax = plt.subplots(1, 2, figsize=(16, 5))
+    ax[0].plot(25 - p1_z, p1_z_n_es / max(p1_z_n_es) * 100, label="p1", marker="s")
+    ax[0].plot(25 - p2_z, p2_z_n_es / max(p2_z_n_es) * 100, label="p2", marker="s")
+    ax[0].plot(25 - p3_z, p3_z_n_es / max(p3_z_n_es) * 100, label="p3", marker="s")
+    ax[0].set_title("n_e along z")
+    ax[0].set_xlabel("z (mm)")
+    ax[0].set_ylabel("n_e (%)")
+    ax[0].legend()
+    ax[0].grid()
+    ax[1].plot(260 + p1_r, p1_r_n_es / max(p1_r_n_es) * 100, label="p1", marker="s")
+    ax[1].plot(260 + p2_r, p2_r_n_es / max(p2_r_n_es) * 100, label="p2", marker="s")
+    ax[1].plot(260 + p3_r, p3_r_n_es / max(p3_r_n_es) * 100, label="p3", marker="s")
+    ax[1].set_title("n_e along r")
+    ax[1].set_xlabel("r (mm)")
+    ax[1].set_ylabel("n_e (%)")
+    ax[1].legend()
+    ax[1].grid()
+    plt.savefig("res/SLP_spacial/SLP_spacial_along_z_or_r.jpg")
+    plt.show()
+
+
 if __name__ == "__main__":
     # analyze_and_save()
-    plot_SLP_spacial()
+    # plot_SLP_spacial()
+    plot_SLP_along_z_or_r()

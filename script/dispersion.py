@@ -129,7 +129,7 @@ def dispersion(
 
 if __name__ == "__main__":
     dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0497ALL.csv"
+    path = "tek0494ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]

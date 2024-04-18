@@ -22,15 +22,23 @@ Calc.:
 class SLP:
     def __init__(self) -> None:
         self.ref_parameters = {
-            "D": 0.12,  # 探针直径        mm
-            "L": 3,  # 探针长度        mm
+            "D": 0.8,  # 探针直径        mm
+            "L": 2,  # 探针长度        mm
         }
 
-    def find_periods(self, data_points, if_print=False):
+    def find_periods(
+        self,
+        data_points,
+        periods_num=10,
+        peak_height_rate=0.7,
+        if_print=False,
+    ):
         """
         Brief: 找到锯齿波周期
         Args:
             data_points: list, [time, voltage, current]
+            periods_num: int, 数据包含的周期数,决定了峰值查找函数中的distance
+            peak_height_rate: float, 峰值高度比例,决定了峰值查找函数中的height
         Returns:
             starts: int, 锯齿波周期起始
             ends: int, 锯齿波周期结束
@@ -43,14 +51,17 @@ class SLP:
         current = np.array(current)
         # 寻找峰值和谷值作为周期始末
         peaks, _ = scipy.signal.find_peaks(
-            voltage,
-            distance=len(voltage) / 11,  # 最小周期记录波形的1/10
-            height=max(voltage) * 0.7,  # 最小峰值为波形最大值的70%
+            # 电压取为正值便于查找峰值
+            voltage + abs(min(voltage)),
+            # 最小周期记录波形的1/(periods_num+1)
+            distance=len(voltage) / (periods_num + 1),
+            # 最小峰值为波形最大值乘peak_height_rate
+            height=max(voltage) * peak_height_rate,
         )
         lows, _ = scipy.signal.find_peaks(
-            -voltage,
-            distance=len(voltage) / 11,
-            height=max(voltage) * 0.7,
+            -voltage + abs(min(-voltage)),
+            distance=len(voltage) / (periods_num + 1),
+            height=max(voltage) * peak_height_rate,
         )
         if np.mean(peaks) < np.mean(lows):
             starts = peaks
@@ -104,7 +115,7 @@ class SLP:
 
     def cal(self, data_points, title="", if_print=False):
         """
-        Brief: 朗缪尔单探针计算,输出绘图对象,V_f, T_e, n_e
+        Brief: 朗缪尔单探针计算,输出绘图对象,V_p, T_e, n_e
         Args:
             data_points: list, [time, voltage, current]
             title: str, 图片标题
@@ -271,7 +282,7 @@ class SLP:
 
 if __name__ == "__main__":
     dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0248ALL.csv"
+    path = "tek0336ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()

@@ -108,7 +108,7 @@ def plot_curve_and_FFT(
     ax[1].plot(Fre, FFT_fitted, label="FFT_fitted")
     # 显示频谱幅值最大值
     max_A = max(FFT_absn)
-    max_A_pos = Fre[FFT_absn == max_A]
+    max_A_pos = Fre[FFT_absn == max_A][0]
     ax[1].vlines(
         x=[max_A_pos],
         ymin=0,
@@ -117,7 +117,11 @@ def plot_curve_and_FFT(
         linestyles="dashed",
     )
     ax[1].annotate(
-        "max_A_pos=" + str(max_A_pos) + "\nmax_A=" + str(max_A),
+        "peak_freq="
+        + str(int(max_A_pos))
+        + " Hz\npeak_A="
+        + "{:.2e}".format(max_A)
+        + " A",
         xy=(max_A_pos * 1.1, max_A * 0.7),
     )
     ax[1].set_title("(b) FFT")
@@ -130,13 +134,13 @@ def plot_curve_and_FFT(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/notes/literature/HC/007_experiments/2023-07 一号阴极测试/2023-12-03 放电振荡特性与探针测试/data/RAW/"
-    path = "tek0010ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0030ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
-    data_obj.read_range = [0, 1e7]  # 计算使用的采样点范围，一般来说越多计算越精确
+    # data_obj.read_range = [0, 1e7]  # 计算使用的采样点范围，一般来说越多计算越精确
     data_points = data_obj.read()
     # data_points = data_obj.normalize()
-    fig, ax = plot_curve_and_FFT(data_points, fre_range=[1e1, 5e6])
+    fig, ax = plot_curve_and_FFT(data_points, fre_range=[1e1, 5e6], FFT_channel=3)
     # plt.savefig("res/20231203_NO10_fre_5e6.png")
     plt.show()

@@ -219,7 +219,7 @@ def SLP_read_and_plot(
         + " m^-3",
     )
     ax[2].set_title("(c) ln(I)-V")
-    plt.savefig("res/SLP_plot/" + title.split(".")[0] + ".jpg")
+    # plt.savefig("res/SLP_plot/" + title.split(".")[0] + ".jpg")
     # plt.show()
 
     return fig, V_f, T_e, n_e
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     data_obj = data.data(default_path)
     data_points = data_obj.read()
     fig, V_f, T_e, n_e = SLP_read_and_plot(data_points)
-    # plt.savefig("res/SLP_tmp_plot.jpg")
+    plt.savefig("res/SLP_tmp_plot.jpg")
     plt.plot()
     plt.show()
     endtime = time.time()

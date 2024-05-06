@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 import sys
 from scipy.interpolate import griddata
@@ -9,6 +10,16 @@ import data
 
 sys.path.append("./base")
 import SLP
+
+# 字体设置
+config = {
+    "font.family": "serif",
+    "font.size": 14,
+    "mathtext.fontset": "stix",
+    "font.serif": ["SimSun"],
+    "axes.unicode_minus": False,
+}
+plt.rcParams.update(config)
 
 
 # 读取px_index.csv中的测量点坐标数据
@@ -108,34 +119,40 @@ def plot_SLP_spacial():
         T_es = data.loc[:, "T_e"]
         n_es = data.loc[:, "n_e"]
     # 绘图
-    fig, ax = plt.subplots(1, 3, figsize=(16, 3))
+    fig, ax = plt.subplots(1, 3, figsize=(16, 3.2))
     plt.subplots_adjust(
-        # top=0.899,
-        # bottom=0.078,
-        left=0.03,
-        right=1,
-        # hspace=0.2,
-        wspace=0.05,
+        top=0.9,
+        bottom=0.18,
+        left=0.05,
+        right=0.98,
+        hspace=0.2,
+        wspace=0.2,
     )
     grid_x, grid_y, grid_z = get_plot_grid(r, z, V_ps)
-    im = ax[0].contourf(grid_x, grid_y, grid_z, levels=50, cmap="jet")
-    ax[0].set_title("V_p")
-    ax[0].set_xlim([-8, 19.5])
-    ax[0].set_ylim([-259, -242])
+    im = ax[0].contourf(20 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
+    ax[0].set_title(r"空间电势 ($\mathrm{V}$)")
+    ax[0].set_xlabel(r"$\mathrm{Z\ (mm)}$")
+    ax[0].set_ylabel(r"$\mathrm{R\ (mm)}$")
+    ax[0].set_xlim([0.5, 27.5])
+    ax[0].set_ylim([0, 17])
     ax[0].set_aspect("equal")
     fig.colorbar(im, ax=ax[0])
     grid_x, grid_y, grid_z = get_plot_grid(r, z, T_es)
-    im = ax[1].contourf(grid_x, grid_y, grid_z, levels=50, cmap="jet")
-    ax[1].set_title("T_e")
-    ax[1].set_xlim([-8, 19.5])
-    ax[1].set_ylim([-259, -242])
+    im = ax[1].contourf(20 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
+    ax[1].set_title(r"电子温度 ($\mathrm{eV}$)")
+    ax[1].set_xlabel(r"$\mathrm{Z\ (mm)}$")
+    ax[1].set_ylabel(r"$\mathrm{R\ (mm)}$")
+    ax[1].set_xlim([0.5, 27.5])
+    ax[1].set_ylim([0, 17])
     ax[1].set_aspect("equal")
     fig.colorbar(im, ax=ax[1])
     grid_x, grid_y, grid_z = get_plot_grid(r, z, n_es)
-    im = ax[2].contourf(grid_x, grid_y, grid_z, levels=50, cmap="jet")
-    ax[2].set_title("n_e")
-    ax[2].set_xlim([-8, 19.5])
-    ax[2].set_ylim([-259, -242])
+    im = ax[2].contourf(20 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
+    ax[2].set_title(r"电子密度 ($\mathrm{m^{-3}}$)")
+    ax[2].set_xlabel(r"$\mathrm{Z\ (mm)}$")
+    ax[2].set_ylabel(r"$\mathrm{R\ (mm)}$")
+    ax[2].set_xlim([0.5, 27.5])
+    ax[2].set_ylim([0, 17])
     ax[2].set_aspect("equal")
     fig.colorbar(im, ax=ax[2])
     plt.savefig(result_path + ".jpg")
@@ -154,13 +171,17 @@ def get_SLP_along_z_or_r(result_path):
     index = r == min(r)
     res_z = z[index]
     z_n_es = n_es[index]
+    # z_n_es = T_es[index]
     index = z > 19
     res_r = r[index]
     r_n_es = n_es[index]
+    # r_n_es = T_es[index]
     return res_z, z_n_es, res_r, r_n_es
 
 
 def plot_SLP_along_z_or_r():
+    config = {"font.size": 18}
+    plt.rcParams.update(config)
     result_path = "res/SLP_spacial/p1_SLP_spacial.csv"
     p1_z, p1_z_n_es, p1_r, p1_r_n_es = get_SLP_along_z_or_r(result_path)
     result_path = "res/SLP_spacial/p2_SLP_spacial.csv"
@@ -168,21 +189,59 @@ def plot_SLP_along_z_or_r():
     result_path = "res/SLP_spacial/p3_SLP_spacial.csv"
     p3_z, p3_z_n_es, p3_r, p3_r_n_es = get_SLP_along_z_or_r(result_path)
     # 绘图
-    fig, ax = plt.subplots(1, 2, figsize=(16, 5))
-    ax[0].plot(25 - p1_z, p1_z_n_es / max(p1_z_n_es) * 100, label="p1", marker="s")
-    ax[0].plot(25 - p2_z, p2_z_n_es / max(p2_z_n_es) * 100, label="p2", marker="s")
-    ax[0].plot(25 - p3_z, p3_z_n_es / max(p3_z_n_es) * 100, label="p3", marker="s")
-    ax[0].set_title("n_e along z")
-    ax[0].set_xlabel("z (mm)")
-    ax[0].set_ylabel("n_e (%)")
+    fig, ax = plt.subplots(1, 2, figsize=(18, 6))
+    plt.subplots_adjust(
+        top=0.92,
+        bottom=0.14,
+        left=0.06,
+        right=0.99,
+        hspace=0.2,
+        wspace=0.2,
+    )
+    ax[0].plot(
+        25 - p1_z,
+        p1_z_n_es / max(p1_z_n_es) * 100,
+        label=r"$\mathrm{10\ A}$",
+        marker="s",
+    )
+    ax[0].plot(
+        25 - p2_z,
+        p2_z_n_es / max(p2_z_n_es) * 100,
+        label=r"$\mathrm{12.5\ A}$",
+        marker="s",
+    )
+    ax[0].plot(
+        25 - p3_z,
+        p3_z_n_es / max(p3_z_n_es) * 100,
+        label=r"$\mathrm{20\ A}$",
+        marker="s",
+    )
+    ax[0].set_title(r"$\mathrm{(a)}$ 沿$\mathrm{Z}$轴")
+    ax[0].set_xlabel(r"$\mathrm{Z\ (mm)}$")
+    ax[0].set_ylabel(r"$\mathrm{n_e\ (\%)}$")
     ax[0].legend()
     ax[0].grid()
-    ax[1].plot(260 + p1_r, p1_r_n_es / max(p1_r_n_es) * 100, label="p1", marker="s")
-    ax[1].plot(260 + p2_r, p2_r_n_es / max(p2_r_n_es) * 100, label="p2", marker="s")
-    ax[1].plot(260 + p3_r, p3_r_n_es / max(p3_r_n_es) * 100, label="p3", marker="s")
-    ax[1].set_title("n_e along r")
-    ax[1].set_xlabel("r (mm)")
-    ax[1].set_ylabel("n_e (%)")
+    ax[1].plot(
+        260 + p1_r,
+        p1_r_n_es / max(p1_r_n_es) * 100,
+        label=r"$\mathrm{10\ A}$",
+        marker="s",
+    )
+    ax[1].plot(
+        260 + p2_r,
+        p2_r_n_es / max(p2_r_n_es) * 100,
+        label=r"$\mathrm{12.5\ A}$",
+        marker="s",
+    )
+    ax[1].plot(
+        260 + p3_r,
+        p3_r_n_es / max(p3_r_n_es) * 100,
+        label=r"$\mathrm{20\ A}$",
+        marker="s",
+    )
+    ax[1].set_title(r"$\mathrm{(b)}$ 沿$\mathrm{R}$轴")
+    ax[1].set_xlabel(r"$\mathrm{R\ (mm)}$")
+    ax[1].set_ylabel(r"$\mathrm{n_e\ (\%)}$")
     ax[1].legend()
     ax[1].grid()
     plt.savefig("res/SLP_spacial/SLP_spacial_along_z_or_r.jpg")

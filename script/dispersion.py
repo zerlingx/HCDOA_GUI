@@ -13,6 +13,16 @@ sys.path.append("./script")
 import data
 import basic_plot
 
+# 字体设置
+config = {
+    "font.family": "serif",
+    "font.size": 18,
+    "mathtext.fontset": "stix",
+    "font.serif": ["SimSun"],
+    "axes.unicode_minus": False,
+}
+plt.rcParams.update(config)
+
 
 def FFT(dT, FFT_data):
     """
@@ -64,22 +74,38 @@ def use_KDE_plot(x, y, values):
     xy = np.vstack([x, y])
     kde = gaussian_kde(xy, weights=values)
     # 在规则网格上评估 KDE
+    # grid_x, grid_y = np.mgrid[
+    #     np.min(x) : np.max(x) : 100j, np.min(y) : np.max(y) : 100j
+    # ]  # 100j 表示100x100的网格
     grid_x, grid_y = np.mgrid[
-        np.min(x) : np.max(x) : 100j, np.min(y) : np.max(y) : 100j
+        0 : np.max(x) : 100j, 0 : np.max(y) : 100j
     ]  # 100j 表示100x100的网格
     grid = np.vstack([grid_x.ravel(), grid_y.ravel()])
     kde_values = kde(grid).reshape(grid_x.shape)
     kde_values = kde_values / np.max(kde_values)
+    #
     # 绘制密度/热力图
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 5))
+    plt.subplots_adjust(
+        top=0.97,
+        bottom=0.15,
+        left=0.15,
+        right=1.0,
+        hspace=0.2,
+        wspace=0.2,
+    )
     plt.pcolormesh(
         grid_x,
-        grid_y,
+        grid_y / 1000,
         kde_values,
         shading="auto",
-        cmap="jet",  # coolwarm/viridis效果也不错
+        cmap="viridis",  # coolwarm/viridis效果也不错
     )
-    plt.colorbar(label="FFT_psd_norm")
+    plt.colorbar()
+    # plt.colorbar(label="归一化功率谱")
+    plt.xlabel(r"波数 $\mathrm{(m^{-1})}$")
+    plt.ylabel(r"频率 $\mathrm{(kHz)}$")
+    plt.savefig("res/dispersion_p1.jpg")
     plt.show()
 
 
@@ -128,8 +154,8 @@ def dispersion(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0494ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-05 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0013ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]

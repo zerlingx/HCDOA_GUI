@@ -91,7 +91,7 @@ def plot_curve_and_FFT(
     # save_FFT_csv = True
     if save_FFT_csv:
         np.savetxt(
-            save_FFT_path + title + str(FFT_channel),
+            save_FFT_path + title,
             np.array([Fre, FFT_absn]).T,
             delimiter=",",
             fmt="%f",
@@ -135,12 +135,18 @@ def plot_curve_and_FFT(
 
 if __name__ == "__main__":
     dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0030ALL.csv"
+    path = "tek0440ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     # data_obj.read_range = [0, 1e7]  # 计算使用的采样点范围，一般来说越多计算越精确
     data_points = data_obj.read()
     # data_points = data_obj.normalize()
-    fig, ax = plot_curve_and_FFT(data_points, fre_range=[1e1, 5e6], FFT_channel=3)
+    fig, ax = plot_curve_and_FFT(
+        data_points,
+        fre_range=[1e1, 5e6],
+        FFT_channel=3,
+        save_FFT_csv=True,
+        title=path,
+    )
     # plt.savefig("res/20231203_NO10_fre_5e6.png")
     plt.show()

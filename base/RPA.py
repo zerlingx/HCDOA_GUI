@@ -86,8 +86,9 @@ class RPA:
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0017ALL.csv"
+    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
+    # dir = "C:/Users/ASUS/Desktop/tmp/"
+    path = "tek0000ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()

@@ -63,6 +63,9 @@ class SLP:
             distance=len(voltage) / (periods_num + 1),
             height=max(voltage) * peak_height_rate,
         )
+        # 排除因电平设置可能造成的谷值前置
+        if abs(time[peaks[0]] - time[lows[0]]) < 10e-3:
+            lows = np.delete(lows, 0)
         if np.mean(peaks) < np.mean(lows):
             starts = peaks
             ends = lows
@@ -170,6 +173,7 @@ class SLP:
                     smooth_dimention,
                 )
                 dIV = voltage[start:end:dstep]
+                dIV = dIV[1:]
                 ddI = np.diff(dI)
                 ddI = scipy.signal.savgol_filter(
                     ddI,
@@ -177,7 +181,7 @@ class SLP:
                     smooth_dimention,
                 )
                 ddI = abs(ddI)
-                # 测试绘图
+                # 测试绘图 1
                 # fig, ax = plt.subplots(1, 1, figsize=(10, 6))
                 # axplt1 = ax.plot(voltage, color="orange")
                 # ax.set_xlabel("Time (s)")
@@ -189,10 +193,30 @@ class SLP:
                 # axplts = axplt1 + axplt2
                 # labels = ["Voltage", "Current"]
                 # ax.legend(axplts, labels, loc="upper right")
-
-                # plt.plot(dI)
-                # plt.plot(ddI)
+                # return
+                # 测试绘图 2
+                # plt.plot(
+                #     dIV,
+                #     current[start:end:dstep][1:] / max(current[start:end:dstep][1:]),
+                #     label="current",
+                # )
+                # plt.plot(dIV, dI / max(dI), label="dI")
+                # plt.plot(dIV[1:], ddI / max(ddI), label="ddI")
+                # plt.xlim([0, 30])
+                # plt.legend()
+                # plt.grid()
+                # plt.show()
+                # return
+                # 测试绘图 3
+                # EEDF
                 # plt.legend(["dI", "ddI"])
+                # index = dIV > 0
+                # V_EEDF = dIV[index][:-1]
+                # ddI_EEDF = ddI[index[:-1]]
+                # f_EEDF = []
+                # for i in range(len(ddI_EEDF)):
+                #     f_EEDF.append(1 * np.sqrt(V_EEDF[i]) * ddI_EEDF[i])
+                # plt.plot(V_EEDF, f_EEDF)
                 # plt.grid()
                 # plt.show()
                 # return
@@ -272,17 +296,24 @@ class SLP:
         V_p = np.mean(V_ps)
         T_e = np.mean(T_es)
         n_e = np.mean(n_es)
+        V_p_std = np.std(V_ps)
+        T_e_std = np.std(T_es)
+        n_e_std = np.std(n_es)
         if if_print:
             print("\n-----Summary-----")
             print("V_p=", V_p)
             print("T_e=", T_e)
             print("n_e=", n_e)
+            print("V_p_std (%)=", "{:.2f}".format(V_p_std / abs(V_p) * 100), "%")
+            print("T_e_std (%)=", "{:.2f}".format(T_e_std / abs(T_e) * 100), "%")
+            print("n_e_std (%)=", "{:.2f}".format(n_e_std / abs(n_e) * 100), "%")
+
         return V_p, T_e, n_e
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0336ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0109ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()

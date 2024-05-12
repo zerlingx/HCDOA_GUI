@@ -244,7 +244,7 @@ def plot_SLP_along_z_or_r():
     ax[1].set_ylabel(r"$\mathrm{n_e\ (\%)}$")
     ax[1].legend()
     ax[1].grid()
-    plt.savefig("res/SLP_spacial/SLP_spacial_along_z_or_r.jpg")
+    # plt.savefig("res/SLP_spacial/SLP_spacial_along_z_or_r.jpg")
     plt.show()
 
 

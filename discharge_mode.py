@@ -26,7 +26,7 @@ class condition:
         self.cycle = cycle
 
 
-if __name__ == "__main__":
+def discharge_mode_2D():
     path = "src/conditions.csv"
     with open(path, "r") as file:
         csv_data = pd.read_csv(
@@ -60,6 +60,9 @@ if __name__ == "__main__":
                 csv_data.loc[i, "cycle"],
             )
         )
+
+    cathode_index = "HIT01"
+    conditions = [i for i in conditions if i.cathode == cathode_index]
 
     # 字体和绘图设置
     config = {
@@ -117,5 +120,9 @@ if __name__ == "__main__":
     ax[0].legend(handles=legend_elements, loc="upper right")
 
     # ax[1] 画电压电流曲线图，虽然第一临界点附近特性和预期的不一样，也画出来看看
-    plt.savefig("res/discharge_mode.png")
+    # plt.savefig("res/discharge_mode.png")
     plt.show()
+
+
+if __name__ == "__main__":
+    discharge_mode_2D()

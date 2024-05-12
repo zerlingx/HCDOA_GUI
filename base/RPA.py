@@ -48,7 +48,7 @@ class RPA:
             current = CURRENT[stage_1:stage_2]
             # 平滑滤波
             smooth_dimention = 1
-            window_size = int(len(voltage) / 100)
+            window_size = int(len(voltage) / 20)
             voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
             current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
             # 如果电压从高到低，反转，默认电压递增为正序
@@ -70,10 +70,11 @@ class RPA:
             axplt1 = ax[0].plot(voltage, color="orange")
             ax[0].set_xlabel("Time (s)")
             ax[0].set_ylabel("Voltage (V)")
+            ax[0].grid()
             axtwin = ax[0].twinx()
             axplt2 = axtwin.plot(current, color="blue")
             axtwin.set_ylabel("Current (A)")
-            axtwin.grid()
+            # axtwin.grid()
             axplts = axplt1 + axplt2
             labels = ["Voltage", "Current"]
             ax[0].legend(axplts, labels, loc="upper right")
@@ -86,9 +87,9 @@ class RPA:
 
 
 if __name__ == "__main__":
-    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-04 羽流诊断与色散关系测试/data/RAW/"
     # dir = "C:/Users/ASUS/Desktop/tmp/"
-    path = "tek0000ALL.csv"
+    path = "tek0004ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()

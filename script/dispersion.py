@@ -154,10 +154,10 @@ def dispersion(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-05 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0013ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0119ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]
     data_points = data_obj.read()
-    dispersion(data_points, fre_range=[1e1, 5e5])
+    dispersion(data_points, fre_range=[1e1, 1e6])

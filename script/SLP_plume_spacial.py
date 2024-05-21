@@ -70,7 +70,7 @@ def analyze_and_save():
         data_obj = data.data(dir + single_path)
         data_points = data_obj.read()
         single_SLP_point = SLP.SLP()
-        V_p, T_e, n_e = single_SLP_point.cal(data_points)
+        V_p, T_e, n_e, V_p_std, T_e_std, n_e_std = single_SLP_point.cal(data_points)
         # 跳过无效数据
         if (
             np.isfinite(V_p) == False
@@ -189,7 +189,7 @@ def plot_SLP_along_z_or_r():
     result_path = "res/SLP_spacial/p3_SLP_spacial.csv"
     p3_z, p3_z_n_es, p3_r, p3_r_n_es = get_SLP_along_z_or_r(result_path)
     # 绘图
-    fig, ax = plt.subplots(1, 2, figsize=(18, 6))
+    fig, ax = plt.subplots(1, 2, figsize=(14, 6))
     plt.subplots_adjust(
         top=0.92,
         bottom=0.14,
@@ -244,7 +244,7 @@ def plot_SLP_along_z_or_r():
     ax[1].set_ylabel(r"$\mathrm{n_e\ (\%)}$")
     ax[1].legend()
     ax[1].grid()
-    # plt.savefig("res/SLP_spacial/SLP_spacial_along_z_or_r.jpg")
+    plt.savefig("res/SLP_spacial/SLP_spacial_along_z_or_r_for_20240514.jpg")
     plt.show()
 
 

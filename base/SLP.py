@@ -116,7 +116,7 @@ class SLP:
 
         return starts, ends
 
-    def cal(self, data_points, title="", if_print=False):
+    def cal(self, data_points, title="", if_print=False, if_print_first=False):
         """
         Brief: 朗缪尔单探针计算,输出绘图对象,V_p, T_e, n_e
         Args:
@@ -270,6 +270,7 @@ class SLP:
                 l_p = self.ref_parameters["L"] * 1e-3
                 # 面积，计算侧面加一个端面
                 A_p = np.pi * d_p * l_p + np.pi / 4.0 * d_p**2
+                print("A_p=", A_p)
                 # 计算电子数密度
                 n_e = I_e0 / (e * A_p) * np.sqrt(2 * np.pi * m_e / (e * T_e))
                 # 若出现异常值，跳过
@@ -291,6 +292,122 @@ class SLP:
                     print("I_e0=", I_e0)
                     print("T_e=", T_e)
                     print("n_e=", n_e)
+                    # 若if_print_first为Ture则绘制第一个周期的SLP分析过程
+                    if if_print_first == True:
+                        if_print_first = False
+                        # 绘图展示SLP分析过程
+                        fig, ax = plt.subplots(
+                            nrows=1,
+                            ncols=3,
+                            figsize=(12, 4),
+                        )
+                        plt.subplots_adjust(
+                            wspace=0.5,
+                            left=0.055,
+                            right=0.98,
+                            bottom=0.12,
+                        )
+                        # (a)
+                        axplt1 = ax[0].plot(time, voltage)
+                        ax[0].set_xlabel("Time (s)")
+                        ax[0].set_ylabel("Voltage (V)")
+                        axtwin = ax[0].twinx()
+                        axplt2 = axtwin.plot(time, current, color="red")
+                        axtwin.set_ylabel("Current (A)")
+                        axtwin.grid()
+                        ax[0].set_title("(a) V-t and I-t")
+                        axplts = axplt1 + axplt2
+                        labels = ["Voltage", "Current"]
+                        ax[0].legend(axplts, labels, loc="upper left")
+                        # (b)
+                        # (b-1) I-V曲线和两个悬浮电势V_f
+                        range_I = max(current) - min(current)
+                        ax[1].vlines(
+                            x=V_f1,
+                            ymin=0 - 0.1 * range_I,
+                            ymax=0 + 0.1 * range_I,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        ax[1].text(
+                            x=V_f1 + max(voltage) * 0.1,
+                            y=0.1 * range_I,
+                            s="V_f1=" + str(round(V_f1, 2)) + " V",
+                        )
+                        range_I = max(current) - min(current)
+                        ax[1].vlines(
+                            x=V_f2,
+                            ymin=0 - 0.1 * range_I,
+                            ymax=0 + 0.1 * range_I,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        ax[1].text(
+                            x=V_f2 + max(voltage) * 0.1,
+                            y=0.02 * range_I,
+                            s="V_f2=" + str(round(V_f2, 2)) + " V",
+                        )
+                        axplt1 = ax[1].plot(voltage, current)
+                        # (b-2) dI/dV-V曲线，找其拐点为等离子体电势V_p
+                        # 降采样
+                        axtwin = ax[1].twinx()
+                        axplt2 = axtwin.plot(dIV, dI, color="orange")
+                        axtwin.set_ylabel("dI/dV (mA/V)")
+                        axplts = axplt1 + axplt2
+                        range_dI = max(dI) - min(dI)
+                        axtwin.vlines(
+                            x=V_p,
+                            ymin=max(dI) - 0.1 * range_dI,
+                            ymax=max(dI) + 0.1 * range_dI,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        axtwin.text(
+                            x=V_p + max(dIV) * 0.1,
+                            y=max(dI),
+                            s="V_p=" + str(round(V_p, 2)) + " V",
+                        )
+                        ax[1].legend(axplts, labels, loc="upper left")
+                        # ax[1].set_xlim((-20, 50))  # 绘制电压范围
+                        ax[1].set_xlabel("Voltage (V)")
+                        ax[1].set_ylabel("Current (A)")
+                        ax[1].grid()
+                        ax[1].set_title("(b) I-V and dI/dV-V")
+                        # (b-3) 找饱和离子电流
+                        ax[1].hlines(
+                            xmin=0.9 * min(voltage),
+                            xmax=0.1 * min(voltage),
+                            y=I_i0,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        ax[1].text(
+                            x=0.9 * min(voltage),
+                            y=I_i0 + (max(current) - min(current)) * 0.1,
+                            s="I_i0=" + str(round(I_i0, 5)) + " A",
+                        )
+                        # (c) ln_I to k
+                        ax[2].scatter(trans_stage_vol, ln_I)
+                        ax[2].plot(trans_stage_vol, k * trans_stage_vol + b, "r")
+                        ax[2].set_xlabel("trans_stage_vol")
+                        ax[2].set_ylabel("ln(I)")
+                        ax[2].legend(["ln(I)", "k*V+b"], loc="upper left")
+                        ax[2].grid()
+                        ax[2].text(
+                            x=trans_stage_vol[0]
+                            + 0.4 * (trans_stage_vol[-1] - trans_stage_vol[0]),
+                            y=ln_I[0] + 0.1 * (ln_I[-1] - ln_I[0]),
+                            s="k="
+                            + str(round(k, 4))
+                            + "\nk_BT_e="
+                            + str(round(T_e, 1))
+                            + " eV\nn_e="
+                            + "{:.2e}".format(n_e)
+                            + " m^-3",
+                        )
+                        ax[2].set_title("(c) ln(I)-V")
+                        plt.plot()
+                        plt.show()
             except:
                 pass  # 若计算失败，跳过
         V_p = np.mean(V_ps)
@@ -308,14 +425,22 @@ class SLP:
             print("T_e_std (%)=", "{:.2f}".format(T_e_std / abs(T_e) * 100), "%")
             print("n_e_std (%)=", "{:.2f}".format(n_e_std / abs(n_e) * 100), "%")
 
-        return V_p, T_e, n_e
+        return V_p, T_e, n_e, V_p_std, T_e_std, n_e_std
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0109ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0336ALL.csv"
+    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-21 可替换针尖单探针测试/data/RAW/"
+    # path = "tek0006ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()
     SLP_example = SLP()
-    V_p, T_e, n_e = SLP_example.cal(data_points, if_print=True)
+    SLP_example.ref_parameters = {
+        "D": 0.8,
+        "L": 2,
+    }
+    V_p, T_e, n_e, V_p_std, T_e_std, n_e_std = SLP_example.cal(
+        data_points, if_print=True, if_print_first=True
+    )

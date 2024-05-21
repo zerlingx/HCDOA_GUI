@@ -88,8 +88,8 @@ def plot_curve_and_FFT(
     FFT_abs = np.abs(FFT_y)[index]
     FFT_absn = FFT_abs / len(FFT_y) * 2
     # 保存FFT结果
-    # save_FFT_csv = True
     if save_FFT_csv:
+        # if True:
         np.savetxt(
             save_FFT_path + title,
             np.array([Fre, FFT_absn]).T,
@@ -105,7 +105,7 @@ def plot_curve_and_FFT(
     FFT_fitted = scipy.signal.savgol_filter(FFT_absn, window_size, smooth_dimention)
 
     ax[1].plot(Fre, FFT_absn, label="FFT")
-    ax[1].plot(Fre, FFT_fitted, label="FFT_fitted")
+    # ax[1].plot(Fre, FFT_fitted, label="FFT_fitted")
     # 显示频谱幅值最大值
     max_A = max(FFT_absn)
     max_A_pos = Fre[FFT_absn == max_A][0]
@@ -134,8 +134,8 @@ def plot_curve_and_FFT(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0440ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0000ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     # data_obj.read_range = [0, 1e7]  # 计算使用的采样点范围，一般来说越多计算越精确

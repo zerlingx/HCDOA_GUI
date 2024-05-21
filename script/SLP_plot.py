@@ -200,8 +200,8 @@ def SLP_read_and_plot(
     m_e = pp.Plasma().constants["M_ELECTRON"]
     k_B = pp.Plasma().constants["K_BOLTZMANN"]
     # 探针直径、长度 (m)，\phi 0.12 mm细钨丝，暴露长度3 mm
-    d_p = 0.12e-3
-    l_p = 3e-3
+    d_p = 0.8e-3
+    l_p = 2e-3
     # 面积，计算侧面加一个端面
     A_p = np.pi * d_p * l_p + np.pi / 4.0 * d_p**2
 
@@ -227,8 +227,8 @@ def SLP_read_and_plot(
 
 if __name__ == "__main__":
     strattime = time.time()
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-03-07 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0015ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0035ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()

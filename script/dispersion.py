@@ -74,15 +74,16 @@ def use_KDE_plot(x, y, values):
     xy = np.vstack([x, y])
     kde = gaussian_kde(xy, weights=values)
     # 在规则网格上评估 KDE
-    # grid_x, grid_y = np.mgrid[
-    #     np.min(x) : np.max(x) : 100j, np.min(y) : np.max(y) : 100j
-    # ]  # 100j 表示100x100的网格
     grid_x, grid_y = np.mgrid[
-        0 : np.max(x) : 100j, 0 : np.max(y) : 100j
+        np.min(x) : np.max(x) : 100j, np.min(y) : np.max(y) : 100j
     ]  # 100j 表示100x100的网格
+    # grid_x, grid_y = np.mgrid[
+    #     0 : np.max(x) : 100j, 0 : np.max(y) : 100j
+    # ]  # 100j 表示100x100的网格
     grid = np.vstack([grid_x.ravel(), grid_y.ravel()])
     kde_values = kde(grid).reshape(grid_x.shape)
-    kde_values = kde_values / np.max(kde_values)
+    # kde_values = kde_values / np.max(kde_values)
+    kde_values = np.log(kde_values)
     #
     # 绘制密度/热力图
     plt.figure(figsize=(6, 5))
@@ -105,7 +106,8 @@ def use_KDE_plot(x, y, values):
     # plt.colorbar(label="归一化功率谱")
     plt.xlabel(r"波数 $\mathrm{(m^{-1})}$")
     plt.ylabel(r"频率 $\mathrm{(kHz)}$")
-    plt.savefig("res/dispersion_p1.jpg")
+    plt.grid()
+    plt.savefig("res/dispersion_20240512.jpg")
     plt.show()
 
 
@@ -131,7 +133,12 @@ def dispersion(
         # 功率谱的选取方式
         FFT_psd_norm.append((FFT_absn_tmp / max(FFT_absn_tmp)) ** 2)
     # 计算色散关系
-    init_k_func_omega(Fre, FFT_y[0], FFT_y[1])
+    init_k_func_omega(
+        # 探针正反顺序搞错会改变色散分布的x轴方向
+        Fre,
+        FFT_y[1],
+        FFT_y[0],
+    )
     ks = []
     for omega in Fre:
         ks.append(k(omega))
@@ -155,9 +162,9 @@ def dispersion(
 
 if __name__ == "__main__":
     dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0119ALL.csv"
+    path = "tek0115ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]
     data_points = data_obj.read()
-    dispersion(data_points, fre_range=[1e1, 1e6])
+    dispersion(data_points, fre_range=[1e1, 3e6])

@@ -43,7 +43,7 @@ st.sidebar.markdown("## 01-1 选择数据")
 # 选择数据文件夹
 if "DIR" not in st.session_state:
     st.session_state["DIR"] = (
-        "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-03-07 羽流诊断与色散关系测试/data/RAW/"
+        "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
     )
 dir = st.session_state["DIR"]
 dir = st.text_input("输入数据文件夹路径", dir, help="路径建议使用正斜杠。")
@@ -123,7 +123,7 @@ with col4:
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    plot_channels = st.multiselect("选择绘图通道", [1, 2, 3, 4], default=[4])
+    plot_channels = st.multiselect("选择绘图通道", [1, 2, 3, 4], default=[2])
 with col2:
     FFT_channel = st.selectbox("选择FFT通道", [1, 2, 3, 4])
 

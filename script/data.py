@@ -16,7 +16,12 @@ class data:
             csv_data = pd.read_csv(
                 file,
                 header=self.header,
+                # 标记示波器存在削波时输出文件中可能的缺失数据
+                na_values=["inf", " -inf"],
             )
+            if self.ifprint:
+                missing_data = csv_data.isnull().sum()
+                print("In data.read(), missing data: " + str(missing_data))
         self.return_data = []
         for column in self.columns:
             try:

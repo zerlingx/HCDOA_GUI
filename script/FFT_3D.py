@@ -246,51 +246,54 @@ def FFT_3D_3():
         Fre = Fre[fre_index]
         FFT_absn = csv_data.iloc[:, 1]
         FFT_absn = FFT_absn[fre_index]
-        FFT_absn = FFT_absn
+        FFT_absn = FFT_absn / zs_list[i]  # 归一化，FFT结果单位由A·s变为s
         ax.set_box_aspect((1, 1, 0.8))  # 3D图形长宽高比例
         ax.plot(Fre, FFT_absn, zs=zs_list[i], zdir="y", label=labels[i])
-        smooth_dimention = 1
-        window_size = int(5e1)
-        FFT_fitted = scipy.signal.savgol_filter(FFT_absn, window_size, smooth_dimention)
-        ax.plot(
-            Fre,
-            FFT_fitted,
-            zs=zs_list[i],
-            zdir="y",
-            # label=labels[i],
-            color="grey",
-        )
+        # ax.set_xlabel("Frequency, kHz")
+        # ax.set_ylabel("Current, A")
+        # ax.set_zlabel("Amplitude, s")
         ax.set_xlabel(r"频率 $\mathrm{(kHz)}$")
         ax.set_ylabel(r"电流 $\mathrm{(A)}$")
-        ax.set_zlabel(r"振幅 $\mathrm{(A\cdot s)}$")
-        try:
-            index1 = Fre < 18
-            max_A1 = max(FFT_absn[index1])
-            max_A1_pos = Fre[FFT_absn == max_A1].values[0]
-            l = np.linspace(0, max_A1, 100)
-            ax.plot(
-                [max_A1_pos] * len(l),
-                [zs_list[i]] * len(l),
-                l,
-                color="black",
-                linestyle="--",
-            )
-        except:
-            pass
-        try:
-            index2 = Fre > 18
-            max_A2 = max(FFT_absn[index2])
-            max_A2_pos = Fre[FFT_absn == max_A2].values[0]
-            l = np.linspace(0, max_A2, 100)
-            ax.plot(
-                [max_A2_pos] * len(l),
-                [zs_list[i]] * len(l),
-                l,
-                color="black",
-                linestyle="--",
-            )
-        except:
-            pass
+        ax.set_zlabel(r"振幅 $\mathrm{(s)}$")
+        # smooth_dimention = 1
+        # window_size = int(5e1)
+        # FFT_fitted = scipy.signal.savgol_filter(FFT_absn, window_size, smooth_dimention)
+        # ax.plot(
+        #     Fre,
+        #     FFT_fitted,
+        #     zs=zs_list[i],
+        #     zdir="y",
+        #     # label=labels[i],
+        #     color="grey",
+        # )
+        # try:
+        #     index1 = Fre < 18
+        #     max_A1 = max(FFT_absn[index1])
+        #     max_A1_pos = Fre[FFT_absn == max_A1].values[0]
+        #     l = np.linspace(0, max_A1, 100)
+        #     ax.plot(
+        #         [max_A1_pos] * len(l),
+        #         [zs_list[i]] * len(l),
+        #         l,
+        #         color="black",
+        #         linestyle="--",
+        #     )
+        # except:
+        #     pass
+        # try:
+        #     index2 = Fre > 18
+        #     max_A2 = max(FFT_absn[index2])
+        #     max_A2_pos = Fre[FFT_absn == max_A2].values[0]
+        #     l = np.linspace(0, max_A2, 100)
+        #     ax.plot(
+        #         [max_A2_pos] * len(l),
+        #         [zs_list[i]] * len(l),
+        #         l,
+        #         color="black",
+        #         linestyle="--",
+        #     )
+        # except:
+        #     pass
     ax.legend(loc="upper right")
     plt.savefig("res/FFT_3D_for_20240414.png")
     plt.show()

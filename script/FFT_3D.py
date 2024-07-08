@@ -126,14 +126,23 @@ def FFT_3D_1():
 
 def FFT_3D_2():
     fig = plt.figure(figsize=(6, 6))
+    config = {
+        "font.family": "serif",
+        "font.size": 14,
+        "mathtext.fontset": "stix",
+        # "font.serif": ["SimSun"],
+        "font.serif": ["Times New Roman"],
+        "axes.unicode_minus": False,
+    }
+    plt.rcParams.update(config)
     plt.subplots_adjust(
         left=0.00,
     )
 
     max_Fre = 300  # kHz
     ax = fig.add_subplot(111, projection="3d")
-    data_list = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
-    # data_list = [i + 5 for i in data_list]
+    data_list = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]  # 饱和电子电流
+    data_list = [i + 5 for i in data_list]  # 加5的编号是饱和离子电流
     labels = [
         "12 sccm",
         "14 sccm",
@@ -175,54 +184,62 @@ def FFT_3D_2():
             label=labels[i],
             color=colormap(cnt / colorcycles),
         )
-        smooth_dimention = 1
-        window_size = int(5e1)
-        FFT_fitted = scipy.signal.savgol_filter(FFT_absn, window_size, smooth_dimention)
-        ax.plot(
-            Fre,
-            FFT_fitted,
-            zs=zs_list[i],
-            zdir="y",
-            # label=labels[i],
-            color="grey",
-        )
-        ax.set_xlabel(r"频率 $\mathrm{(kHz)}$")
-        ax.set_ylabel(r"流量 $\mathrm{(sccm)}$")
-        ax.set_zlabel(r"振幅 $\mathrm{(mA\cdot s)}$")
-        try:
-            index1 = Fre < 150
-            max_A1 = max(FFT_absn[index1])
-            max_A1_pos = Fre[FFT_absn == max_A1].values[0]
-            l = np.linspace(0, max_A1, 100)
-            ax.plot(
-                [max_A1_pos] * len(l),
-                [zs_list[i]] * len(l),
-                l,
-                color="black",
-                linestyle="--",
-            )
-        except:
-            pass
-        try:
-            index2 = Fre > 150
-            max_A2 = max(FFT_absn[index2])
-            max_A2_pos = Fre[FFT_absn == max_A2].values[0]
-            l = np.linspace(0, max_A2, 100)
-            ax.plot(
-                [max_A2_pos] * len(l),
-                [zs_list[i]] * len(l),
-                l,
-                color="black",
-                linestyle="--",
-            )
-        except:
-            pass
+        # smooth_dimention = 1
+        # window_size = int(5e1)
+        # FFT_fitted = scipy.signal.savgol_filter(FFT_absn, window_size, smooth_dimention)
+        # ax.plot(
+        #     Fre,
+        #     FFT_fitted,
+        #     zs=zs_list[i],
+        #     zdir="y",
+        #     # label=labels[i],
+        #     color="grey",
+        # )
+        # ax.set_xlabel(r"频率 $\mathrm{(kHz)}$")
+        # ax.set_ylabel(r"流量 $\mathrm{(sccm)}$")
+        # ax.set_zlabel(r"振幅 $\mathrm{(mA\cdot s)}$")
+        ax.set_xlabel("Frequency, kHz")
+        ax.set_ylabel("Flow rate, sccm")
+        ax.set_zlabel("Amplitude, mA·s")
+        # try:
+        #     index1 = Fre < 150
+        #     max_A1 = max(FFT_absn[index1])
+        #     max_A1_pos = Fre[FFT_absn == max_A1].values[0]
+        #     l = np.linspace(0, max_A1, 100)
+        #     ax.plot(
+        #         [max_A1_pos] * len(l),
+        #         [zs_list[i]] * len(l),
+        #         l,
+        #         color="black",
+        #         linestyle="--",
+        #     )
+        # except:
+        #     pass
+        # try:
+        #     index2 = Fre > 150
+        #     max_A2 = max(FFT_absn[index2])
+        #     max_A2_pos = Fre[FFT_absn == max_A2].values[0]
+        #     l = np.linspace(0, max_A2, 100)
+        #     ax.plot(
+        #         [max_A2_pos] * len(l),
+        #         [zs_list[i]] * len(l),
+        #         l,
+        #         color="black",
+        #         linestyle="--",
+        #     )
+        # except:
+        #     pass
     # ax.legend(loc=(0.6, 0.5))
-    plt.savefig("res/FFT_3D_for_20240513_Ie0.png")
+    plt.savefig("res/FFT_3D_for_20240513_Ii0.png")
     plt.show()
 
 
 def FFT_3D_3():
+    config = {
+        "font.size": 14,
+        "font.serif": ["Times New Roman"],
+    }
+    plt.rcParams.update(config)
     fig = plt.figure(figsize=(6, 6))
     plt.subplots_adjust(
         left=0.00,
@@ -249,12 +266,12 @@ def FFT_3D_3():
         FFT_absn = FFT_absn / zs_list[i]  # 归一化，FFT结果单位由A·s变为s
         ax.set_box_aspect((1, 1, 0.8))  # 3D图形长宽高比例
         ax.plot(Fre, FFT_absn, zs=zs_list[i], zdir="y", label=labels[i])
-        # ax.set_xlabel("Frequency, kHz")
-        # ax.set_ylabel("Current, A")
-        # ax.set_zlabel("Amplitude, s")
-        ax.set_xlabel(r"频率 $\mathrm{(kHz)}$")
-        ax.set_ylabel(r"电流 $\mathrm{(A)}$")
-        ax.set_zlabel(r"振幅 $\mathrm{(s)}$")
+        ax.set_xlabel("Frequency, kHz")
+        ax.set_ylabel("Current, A")
+        ax.set_zlabel("Amplitude, s")
+        # ax.set_xlabel(r"频率 $\mathrm{(kHz)}$")
+        # ax.set_ylabel(r"电流 $\mathrm{(A)}$")
+        # ax.set_zlabel(r"振幅 $\mathrm{(s)}$")
         # smooth_dimention = 1
         # window_size = int(5e1)
         # FFT_fitted = scipy.signal.savgol_filter(FFT_absn, window_size, smooth_dimention)

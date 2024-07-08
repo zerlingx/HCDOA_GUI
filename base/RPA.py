@@ -34,7 +34,7 @@ class RPA:
         CURRENT = data_points[2]
         # 调用SLP类的find_periods方法，查找电压扫描周期
         tmp_SLP = SLP.SLP()
-        starts, ends = tmp_SLP.find_periods(data_points, 2, 0.7, if_print=False)
+        starts, ends = tmp_SLP.find_periods(data_points, 10, 0.7, if_print=True)
 
         for i in range(len(starts)):
             # 选取一个周期的数据,删除始末段扫描电压突变时的数据
@@ -48,7 +48,7 @@ class RPA:
             current = CURRENT[stage_1:stage_2]
             # 平滑滤波
             smooth_dimention = 1
-            window_size = int(len(voltage) / 20)
+            window_size = int(len(voltage) / 10)
             voltage = scipy.signal.savgol_filter(voltage, window_size, smooth_dimention)
             current = scipy.signal.savgol_filter(current, window_size, smooth_dimention)
             # 如果电压从高到低，反转，默认电压递增为正序
@@ -57,10 +57,13 @@ class RPA:
                 voltage = np.flip(voltage)
                 current = np.flip(current)
             # 计算dI/dV
-            # 降采样
+            # 降采样为小于100个数据点
             dstep = int(len(voltage) / 100)
-            start = int(0.001 * len(current))
-            end = int(0.999 * len(current))
+            # start = int(0.001 * len(current))
+            # end = int(0.999 * len(current))
+            start = 0
+            end = len(current)
+            # 这里计算电流梯度dI/dV，后面绘图取正值为能量分布函数
             dI = np.diff(current[start:end:dstep]) / np.diff(voltage[start:end:dstep])
             dI = scipy.signal.savgol_filter(dI, int(len(dI) / 20 + 2), smooth_dimention)
             dIV = voltage[start:end:dstep]
@@ -80,6 +83,7 @@ class RPA:
             ax[0].legend(axplts, labels, loc="upper right")
             f_ni = scipy.signal.savgol_filter(-dI, int(len(dI) / 10), smooth_dimention)
             ax[1].plot(dIV, f_ni)
+            ax[1].set_ylabel("f_ni (-dI/dV)")
             ax[1].legend(["dI/dV"])
             ax[1].grid()
             plt.show()
@@ -87,9 +91,10 @@ class RPA:
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-04 羽流诊断与色散关系测试/data/RAW/"
-    # dir = "C:/Users/ASUS/Desktop/tmp/"
-    path = "tek0004ALL.csv"
+    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-04 羽流诊断与色散关系测试/data/RAW/"
+    # path = "tek0004ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-07-07 RPA测试/data/RAW/"
+    path = "tek0007ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()

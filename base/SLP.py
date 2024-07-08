@@ -66,7 +66,7 @@ class SLP:
         # 排除因电平设置可能造成的谷值前置
         # 若峰谷位置小于半个扫描周期（50 ms），即视为谷值前置
         scan_freq = 10  # Hz
-        scan_period = int(1000 / 10) * 1e-3  # ms
+        scan_period = int(1000 / scan_freq) * 1e-3  # ms
         if abs(time[peaks[0]] - time[lows[0]]) < 0.5 * scan_period:
             lows = np.delete(lows, 0)
         # 检查峰谷时刻电压，删除电压离群值
@@ -80,7 +80,10 @@ class SLP:
                 > error_limit
             ):
                 error_peaks_index.append(i)
+        # 找到峰值离群点，删除
+        # 注意要把对应的谷值也删除
         peaks = np.delete(peaks, error_peaks_index)
+        lows = np.delete(lows, error_peaks_index)
         error_lows_index = []
         for i in range(len(lows)):
             if (
@@ -89,6 +92,7 @@ class SLP:
             ):
                 error_lows_index.append(i)
         lows = np.delete(lows, error_lows_index)
+        peaks = np.delete(peaks, error_lows_index)
         # 由峰谷分布前后确定数据读取起始
         if np.mean(peaks) < np.mean(lows):
             starts = peaks
@@ -117,7 +121,6 @@ class SLP:
                 while ends[i] - starts[i] > 1.5 * min_period:
                     starts = np.delete(starts, i)
             starts = starts[:ends_num]
-
         # 绘图展示周期查找结果
         if if_print:
             print("starts num=", len(starts))
@@ -169,6 +172,9 @@ class SLP:
                 time = time[stage_1:stage_2]
                 voltage = VOLTAGE[stage_1:stage_2]
                 current = CURRENT[stage_1:stage_2]
+                # 将示波器量程截断产生的无效值转换为0
+                voltage = np.nan_to_num(voltage, nan=0, posinf=0, neginf=0)
+                current = np.nan_to_num(current, nan=0, posinf=0, neginf=0)
                 # 平滑滤波
                 smooth_dimention = 1
                 window_size = int(len(voltage) / 100)
@@ -188,21 +194,18 @@ class SLP:
                 dstep = int(len(voltage) / 100)
                 start = int(0.1 * len(current))
                 end = int(0.9 * len(current))
+                # 一阶导
                 dI = np.diff(current[start:end:dstep]) / np.diff(
                     voltage[start:end:dstep]
                 )
                 dI = scipy.signal.savgol_filter(
-                    dI,
-                    int(len(dI) / 20 + 2),
-                    smooth_dimention,
+                    dI, int(len(dI) / 20 + 2), smooth_dimention
                 )
                 dIV = voltage[start:end:dstep]
                 dIV = dIV[1:]
                 ddI = np.diff(dI)
                 ddI = scipy.signal.savgol_filter(
-                    ddI,
-                    int(len(ddI) / 20 + 2),
-                    smooth_dimention,
+                    ddI, int(len(ddI) / 20 + 2), smooth_dimention
                 )
                 ddI = abs(ddI)
                 # 测试绘图 1
@@ -244,7 +247,6 @@ class SLP:
                 # plt.grid()
                 # plt.show()
                 # return
-
                 # 找V_f
                 ddI_peaks, _ = scipy.signal.find_peaks(
                     ddI,
@@ -457,10 +459,10 @@ class SLP:
 
 
 if __name__ == "__main__":
-    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    # path = "tek0336ALL.csv"
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-23 可替换针尖单探针测试/data/RAW/"
-    path = "tek0000ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0246ALL.csv"
+    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
+    # path = "tek0102ALL.csv"
 
     default_path = dir + path
     data_obj = data.data(default_path)

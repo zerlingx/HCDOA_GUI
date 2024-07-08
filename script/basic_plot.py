@@ -221,7 +221,7 @@ def plot_curve_and_FFT(
         + str(int(max_A_pos))
         + " Hz\npeak_A="
         + "{:.2e}".format(max_A)
-        + " A",
+        + " A·s",
         xy=(max_A_pos * 1.1, max_A * 0.7),
     )
     ax[1].set_title("(b) FFT")

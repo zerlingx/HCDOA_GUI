@@ -24,8 +24,8 @@
 
 `script/basic_plot.py`绘制图像。
 
-![basic_plot](subjects/HC/010_analysis/hollow_cathode_discharge_oscillation/res/fig.png)
+![basic_plot](/res/fig.png)
 
 图形化界面演示。
 
-![res](subjects/HC/010_analysis/hollow_cathode_discharge_oscillation/res/GUI_example.png)
+![res](/res/GUI_example.png)

@@ -33,9 +33,9 @@ class data:
                         csv_data.loc[self.read_range[0] : self.read_range[1], column]
                     )
             except:
+                # 空数据占位，保持原始通道编号
+                self.return_data.append([])
                 if self.ifprint:
-                    # 空数据占位，保持原始通道编号
-                    self.return_data.append([])
                     print("In data.read(), channel " + column + " is blank.")
         return self.return_data
 

@@ -107,19 +107,19 @@ def analyze_and_save():
         print("T_e_std (%)=", "{:.2f}".format(T_e_std / abs(T_e) * 100), "%", end=", ")
         print("n_e_std (%)=", "{:.2f}".format(n_e_std / abs(n_e) * 100), "%")
     # 保存坐标和诊断结果
-    save_index_and_SLP_data(
-        save_path="res/SLP_spacial/p1_SLP_spacial_20240702.csv",
-        num=num,
-        r=r,
-        z=z,
-        V_ps=V_ps,
-        T_es=T_es,
-        n_es=n_es,
-        V_p_stds=V_p_stds,
-        T_e_stds=T_e_stds,
-        n_e_stds=n_e_stds,
-    )
-    print("Data saved. nums=", len(num))
+    # save_index_and_SLP_data(
+    #     save_path="res/SLP_spacial/p1_SLP_spacial_20240702.csv",
+    #     num=num,
+    #     r=r,
+    #     z=z,
+    #     V_ps=V_ps,
+    #     T_es=T_es,
+    #     n_es=n_es,
+    #     V_p_stds=V_p_stds,
+    #     T_e_stds=T_e_stds,
+    #     n_e_stds=n_e_stds,
+    # )
+    # print("Data saved. nums=", len(num))
 
 
 def get_plot_grid(r, z, values):
@@ -131,7 +131,9 @@ def get_plot_grid(r, z, values):
 
 
 def plot_SLP_spacial():
-    result_path = "res/SLP_spacial/p3_SLP_spacial.csv"
+    config = {"font.size": 14}
+    plt.rcParams.update(config)
+    result_path = "res/SLP_spacial/p2_SLP_spacial.csv"
     with open(result_path, "r") as file:
         data = pd.read_csv(file)
         num = data.loc[:, "num"]
@@ -151,38 +153,38 @@ def plot_SLP_spacial():
         wspace=0.2,
     )
     grid_x, grid_y, grid_z = get_plot_grid(r, z, V_ps)
-    im = ax[0].contourf(20 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
+    im = ax[0].contourf(24.5 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
     ax[0].set_title("Plasma potential, V")
     ax[0].set_xlabel("Z, mm")
     ax[0].set_ylabel("R, mm")
     # ax[0].set_title(r"空间电势 ($\mathrm{V}$)")
     # ax[0].set_xlabel(r"$\mathrm{Z\ (mm)}$")
     # ax[0].set_ylabel(r"$\mathrm{R\ (mm)}$")
-    ax[0].set_xlim([0.5, 27.5])
+    ax[0].set_xlim([5, 32.5])
     ax[0].set_ylim([0, 17])
     ax[0].set_aspect("equal")
     fig.colorbar(im, ax=ax[0])
     grid_x, grid_y, grid_z = get_plot_grid(r, z, T_es)
-    im = ax[1].contourf(20 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
+    im = ax[1].contourf(24.5 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
     ax[1].set_title("Electron temperature, eV")
     ax[1].set_xlabel("Z, mm")
     ax[1].set_ylabel("R, mm")
     # ax[1].set_title(r"电子温度 ($\mathrm{eV}$)")
     # ax[1].set_xlabel(r"$\mathrm{Z\ (mm)}$")
     # ax[1].set_ylabel(r"$\mathrm{R\ (mm)}$")
-    ax[1].set_xlim([0.5, 27.5])
+    ax[1].set_xlim([5, 32.5])
     ax[1].set_ylim([0, 17])
     ax[1].set_aspect("equal")
     fig.colorbar(im, ax=ax[1])
     grid_x, grid_y, grid_z = get_plot_grid(r, z, n_es)
-    im = ax[2].contourf(20 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
+    im = ax[2].contourf(24.5 - grid_x, grid_y + 259.5, grid_z, levels=50, cmap="jet")
     ax[2].set_title(r"Electron number density, $\mathrm{m^{-3}}$")
     ax[2].set_xlabel("Z, mm")
     ax[2].set_ylabel("R, mm")
     # ax[2].set_title(r"电子密度 ($\mathrm{m^{-3}}$)")
     # ax[2].set_xlabel(r"$\mathrm{Z\ (mm)}$")
     # ax[2].set_ylabel(r"$\mathrm{R\ (mm)}$")
-    ax[2].set_xlim([0.5, 27.5])
+    ax[2].set_xlim([5, 32.5])
     ax[2].set_ylim([0, 17])
     ax[2].set_aspect("equal")
     fig.colorbar(im, ax=ax[2])
@@ -283,14 +285,14 @@ def plot_SLP_along_z_or_r():
         wspace=0.2,
     )
     ax[0].plot(
-        20 - p1_z,
+        24.5 - p1_z,
         p1_z_n_es / max(p1_z_n_es) * 100,
         label=r"$\mathrm{10\ A}$",
         marker="s",
         color="#1f77b4",
     )
     ax[0].errorbar(
-        20 - p1_z,
+        24.5 - p1_z,
         p1_z_n_es / max(p1_z_n_es) * 100,
         yerr=p1_z_n_es_std / max(p1_z_n_es) * 100,
         ecolor="k",
@@ -306,14 +308,14 @@ def plot_SLP_along_z_or_r():
         linestyle="none",
     )
     ax[0].plot(
-        20 - p2_z,
+        24.5 - p2_z,
         p2_z_n_es / max(p2_z_n_es) * 100,
         label=r"$\mathrm{12.5\ A}$",
         marker="s",
         color="#ff7f0e",
     )
     ax[0].errorbar(
-        20 - p2_z,
+        24.5 - p2_z,
         p2_z_n_es / max(p2_z_n_es) * 100,
         yerr=p2_z_n_es_std / max(p2_z_n_es) * 100,
         ecolor="k",
@@ -329,14 +331,14 @@ def plot_SLP_along_z_or_r():
         linestyle="none",
     )
     ax[0].plot(
-        20 - p3_z,
+        24.5 - p3_z,
         p3_z_n_es / max(p3_z_n_es) * 100,
         label=r"$\mathrm{20\ A}$",
         marker="s",
         color="#2ca02c",
     )
     ax[0].errorbar(
-        20 - p3_z,
+        24.5 - p3_z,
         p3_z_n_es / max(p3_z_n_es) * 100,
         yerr=p3_z_n_es_std / max(p3_z_n_es) * 100,
         ecolor="k",
@@ -354,6 +356,7 @@ def plot_SLP_along_z_or_r():
     ax[0].set_title(r"(a) $\mathrm{n_e}$ Along Z axis")
     ax[0].set_xlabel("Z, mm")
     ax[0].set_ylabel("Normalized electron density, %")
+    ax[0].set_xlim([0, 35])
     # ax[0].set_title(r"$\mathrm{(a)}$ 沿$\mathrm{Z}$轴")
     # ax[0].set_xlabel(r"$\mathrm{Z\ (mm)}$")
     # ax[0].set_ylabel(r"$\mathrm{n_e\ (\%)}$")
@@ -651,8 +654,8 @@ def plot_SLP_along_r_logVp_and_logne():
 
 
 if __name__ == "__main__":
-    analyze_and_save()
+    # analyze_and_save()
     # plot_SLP_spacial()
     # combine_SLP_spacial()
-    # plot_SLP_along_z_or_r()
+    plot_SLP_along_z_or_r()
     # plot_SLP_along_r_logVp_and_logne()

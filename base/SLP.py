@@ -1,8 +1,9 @@
 # Single-Langmuir Probe (SLP)
+import sys
+
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import matplotlib.pyplot as plt
-import sys
 
 sys.path.append("./")
 import constant.plasma_parameters as pp
@@ -72,13 +73,10 @@ class SLP:
         # 检查峰谷时刻电压，删除电压离群值
         mean_peaks_voltage = np.mean(voltage[peaks])
         mean_lows_voltage = np.mean(voltage[lows])
-        error_limit = 0.1
+        error_limit = 10  # 10V为最大误差限制
         error_peaks_index = []
         for i in range(len(peaks)):
-            if (
-                abs(voltage[peaks[i]] - mean_peaks_voltage) / abs(mean_peaks_voltage)
-                > error_limit
-            ):
+            if abs(voltage[peaks[i]] - mean_peaks_voltage) > error_limit:
                 error_peaks_index.append(i)
         # 找到峰值离群点，删除
         # 注意要把对应的谷值也删除
@@ -86,10 +84,7 @@ class SLP:
         lows = np.delete(lows, error_peaks_index)
         error_lows_index = []
         for i in range(len(lows)):
-            if (
-                abs(voltage[lows[i]] - mean_lows_voltage) / abs(mean_lows_voltage)
-                > error_limit
-            ):
+            if abs(voltage[lows[i]] - mean_lows_voltage) > error_limit:
                 error_lows_index.append(i)
         lows = np.delete(lows, error_lows_index)
         peaks = np.delete(peaks, error_lows_index)
@@ -143,7 +138,14 @@ class SLP:
 
         return starts, ends
 
-    def cal(self, data_points, title="", if_print=False, if_print_first=False):
+    def cal(
+        self,
+        data_points,
+        title="",
+        if_print=False,
+        if_print_first=False,
+        if_print_first_EEDF=False,
+    ):
         """
         Brief: 朗缪尔单探针计算,输出绘图对象,V_p, T_e, n_e
         Args:
@@ -203,11 +205,11 @@ class SLP:
                 )
                 dIV = voltage[start:end:dstep]
                 dIV = dIV[1:]
-                ddI = np.diff(dI)
+                ddI = np.diff(dI) / np.diff(dIV)
                 ddI = scipy.signal.savgol_filter(
                     ddI, int(len(ddI) / 20 + 2), smooth_dimention
                 )
-                ddI = abs(ddI)
+                ddIV = dIV[1:]
                 # 测试绘图 1
                 # fig, ax = plt.subplots(1, 1, figsize=(10, 6))
                 # axplt1 = ax.plot(voltage, color="orange")
@@ -221,49 +223,28 @@ class SLP:
                 # labels = ["Voltage", "Current"]
                 # ax.legend(axplts, labels, loc="upper right")
                 # return
-                # 测试绘图 2
-                # plt.plot(
-                #     dIV,
-                #     current[start:end:dstep][1:] / max(current[start:end:dstep][1:]),
-                #     label="current",
-                # )
-                # plt.plot(dIV, dI / max(dI), label="dI")
-                # plt.plot(dIV[1:], ddI / max(ddI), label="ddI")
-                # plt.xlim([0, 30])
-                # plt.legend()
-                # plt.grid()
-                # plt.show()
-                # return
-                # 测试绘图 3
-                # EEDF
-                # plt.legend(["dI", "ddI"])
-                # index = dIV > 0
-                # V_EEDF = dIV[index][:-1]
-                # ddI_EEDF = ddI[index[:-1]]
-                # f_EEDF = []
-                # for i in range(len(ddI_EEDF)):
-                #     f_EEDF.append(1 * np.sqrt(V_EEDF[i]) * ddI_EEDF[i])
-                # plt.plot(V_EEDF, f_EEDF)
-                # plt.grid()
-                # plt.show()
-                # return
                 # 找V_f
-                ddI_peaks, _ = scipy.signal.find_peaks(
-                    ddI,
-                    distance=len(ddI) / 30,  # 最小周期记录波形的1/10
-                    height=max(ddI) * 0.3,  # 最小峰值为波形最大值的30%
-                )
                 # 1、电流零点作为V_f
                 zero_point = abs(current) == min(abs(current))
                 zero_point = np.where(zero_point == True)[0]
                 V_f1 = float(voltage[zero_point][0])
                 # 2、电流梯度突然增大的点作为V_f
+                abs_ddI = abs(ddI)
+                ddI_peaks, _ = scipy.signal.find_peaks(
+                    abs_ddI,
+                    distance=len(abs_ddI) / 30,  # 最小周期记录波形的1/10
+                    height=max(abs_ddI) * 0.3,  # 最小峰值为波形最大值的30%
+                )
                 V_f2 = float(dIV[ddI_peaks][0])
                 V_f = max(V_f1, V_f2)
-
+                # V_f = V_f1
                 # 找V_p
-                # 梯度突然减小的点为V_p
-                V_p = float(dIV[ddI_peaks][1])
+                # 1、电流梯度最大点作为V_p
+                V_p1 = float(dIV[dI == max(dI)][0])
+                # 2、拐点（即二阶导第二峰值）作为V_p
+                V_p2 = float(dIV[ddI_peaks][1])
+                V_p = V_p1
+                # 注：上述不同找V_f,V_p方法可能对数据分析结果绝对值和稳定性产生影响
                 # turn_point = np.where(dI == max(dI))[0]
                 # V_p = float(dIV[turn_point][0])
                 # 找离子、电子饱和电流
@@ -317,127 +298,198 @@ class SLP:
                     print("I_e0=", I_e0)
                     print("T_e=", T_e)
                     print("n_e=", n_e)
-                    # 若if_print_first为Ture则绘制第一个周期的SLP分析过程
-                    if if_print_first == True:
-                        try:
-                            # 绘图展示SLP分析过程
-                            fig, ax = plt.subplots(
-                                nrows=1,
-                                ncols=3,
-                                figsize=(12, 4),
+                # 绘制第一个周期的SLP分析过程
+                if if_print_first == True:
+                    try:
+                        # 绘图展示SLP分析过程
+                        fig, ax = plt.subplots(
+                            nrows=1,
+                            ncols=3,
+                            figsize=(12, 4),
+                        )
+                        plt.subplots_adjust(
+                            wspace=0.5,
+                            left=0.055,
+                            right=0.98,
+                            bottom=0.12,
+                        )
+                        # (a)
+                        axplt1 = ax[0].plot(time, voltage)
+                        ax[0].set_xlabel("Time (s)")
+                        ax[0].set_ylabel("Voltage (V)")
+                        axtwin = ax[0].twinx()
+                        axplt2 = axtwin.plot(time, current, color="red")
+                        axtwin.set_ylabel("Current (A)")
+                        axtwin.grid()
+                        ax[0].set_title("(a) V-t and I-t")
+                        axplts = axplt1 + axplt2
+                        labels = ["Voltage", "Current"]
+                        ax[0].legend(axplts, labels, loc="upper left")
+                        # (b)
+                        # (b-1) I-V曲线和两个悬浮电势V_f
+                        range_I = max(current) - min(current)
+                        ax[1].vlines(
+                            x=V_f1,
+                            ymin=0 - 0.1 * range_I,
+                            ymax=0 + 0.1 * range_I,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        ax[1].text(
+                            x=V_f1 + max(voltage) * 0.1,
+                            y=0.1 * range_I,
+                            s="V_f1=" + str(round(V_f1, 2)) + " V",
+                        )
+                        range_I = max(current) - min(current)
+                        ax[1].vlines(
+                            x=V_f2,
+                            ymin=0 - 0.1 * range_I,
+                            ymax=0 + 0.1 * range_I,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        ax[1].text(
+                            x=V_f2 + max(voltage) * 0.1,
+                            y=0.02 * range_I,
+                            s="V_f2=" + str(round(V_f2, 2)) + " V",
+                        )
+                        axplt1 = ax[1].plot(voltage, current)
+                        # (b-2) dI/dV-V曲线，找其拐点为等离子体电势V_p
+                        # 降采样
+                        axtwin = ax[1].twinx()
+                        axplt2 = axtwin.plot(dIV, dI, color="orange")
+                        axtwin.set_ylabel("dI/dV (mA/V)")
+                        axplts = axplt1 + axplt2
+                        range_dI = max(dI) - min(dI)
+                        axtwin.vlines(
+                            x=V_p,
+                            ymin=max(dI) - 0.1 * range_dI,
+                            ymax=max(dI) + 0.1 * range_dI,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        axtwin.text(
+                            x=V_p + max(dIV) * 0.1,
+                            y=max(dI),
+                            s="V_p=" + str(round(V_p, 2)) + " V",
+                        )
+                        labels = ["I-V", "dI/dV-V"]
+                        ax[1].legend(axplts, labels, loc="upper left")
+                        ax[1].set_xlim((-30, 50))  # 绘制电压范围
+                        ax[1].set_xlabel("Voltage (V)")
+                        ax[1].set_ylabel("Current (A)")
+                        ax[1].grid()
+                        ax[1].set_title("(b) I-V and dI/dV-V")
+                        # (b-3) 找饱和离子电流
+                        ax[1].hlines(
+                            xmin=0.9 * min(voltage),
+                            xmax=0.1 * min(voltage),
+                            y=I_i0,
+                            colors="r",
+                            linestyles="dashed",
+                        )
+                        ax[1].text(
+                            # x=0.9 * min(voltage),
+                            x=-30,
+                            y=I_i0 + (max(current) - min(current)) * 0.1,
+                            s="I_i0=" + str(round(I_i0, 5)) + " A",
+                        )
+                        # (c) ln_I to k
+                        ax[2].scatter(trans_stage_vol, ln_I)
+                        ax[2].plot(trans_stage_vol, k * trans_stage_vol + b, "r")
+                        ax[2].set_xlabel("trans_stage_vol")
+                        ax[2].set_ylabel("ln(I)")
+                        ax[2].legend(["ln(I)", "k*V+b"], loc="upper left")
+                        ax[2].grid()
+                        ax[2].text(
+                            x=trans_stage_vol[0]
+                            + 0.4 * (trans_stage_vol[-1] - trans_stage_vol[0]),
+                            y=ln_I[0] + 0.1 * (ln_I[-1] - ln_I[0]),
+                            s="k="
+                            + str(round(k, 4))
+                            + "\nk_BT_e="
+                            + str(round(T_e, 1))
+                            + " eV\nn_e="
+                            + "{:.2e}".format(n_e)
+                            + " m^-3",
+                        )
+                        ax[2].set_title("(c) ln(I)-V")
+                        plt.plot()
+                        plt.savefig("SLP_process.png")
+                        plt.show()
+                        if_print_first = False
+                    except:
+                        if_print_first = True
+                # 绘制第一个周期的EEDF分析过程
+                if if_print_first_EEDF:
+                    try:
+                        # plt.plot(
+                        #     dIV,
+                        #     current[start:end:dstep][1:]
+                        #     / max(current[start:end:dstep][1:]),
+                        #     label="I (current)",
+                        # )
+                        # plt.plot(dIV, dI / max(dI), label="dI")
+                        index = (ddIV < V_p) & (ddIV > 0)
+                        ddIV = V_p - ddIV[index]
+                        ddI = ddI[index]
+                        # plt.plot(ddIV, ddI, label="ddI")
+                        # 计算EEPF
+                        m_e = pp.Plasma().constants["M_ELECTRON"]
+                        e = pp.Plasma().constants["E_ELEC"]
+                        f_EEPF = []
+                        for i in range(len(ddIV)):
+                            f_EEPF.append(
+                                m_e**2
+                                / (2 * np.pi * e**3 * A_p)
+                                * ddI[i]
+                                / np.sqrt(ddIV[i])
                             )
-                            plt.subplots_adjust(
-                                wspace=0.5,
-                                left=0.055,
-                                right=0.98,
-                                bottom=0.12,
+                        plt.plot(ddIV, f_EEPF, label="f_EEPF")
+                        # 计算麦克斯韦分布曲线
+                        f_MAXWELL = []
+                        v_f_MAXWELL = np.arange(0.01, V_p, 0.01)
+                        from scipy.special import gamma
+
+                        g = 1  # g=1为Maxwellian分布，g=2为Druyvesteyn分布
+                        beta1 = gamma(5 / (2 * g)) ** (3 / (2 * g)) * gamma(3 / 2) ** (
+                            -5 / 2
+                        )
+                        beta2 = gamma(5 / (2 * g)) * gamma(3 / (2 * g)) ** (-1)
+                        for i in range(len(v_f_MAXWELL)):
+                            f_MAXWELL.append(
+                                T_e ** (-3 / 2)
+                                * beta1
+                                * np.exp(-((v_f_MAXWELL[i] * beta2 / T_e) ** g))
+                                # 乘以根号v是EEDF，看常数坐标系分布，否则为EEPF，对数坐标系下MAXWELL分布为直线
+                                # * np.sqrt(v_f_MAXWELL[i])
                             )
-                            # (a)
-                            axplt1 = ax[0].plot(time, voltage)
-                            ax[0].set_xlabel("Time (s)")
-                            ax[0].set_ylabel("Voltage (V)")
-                            axtwin = ax[0].twinx()
-                            axplt2 = axtwin.plot(time, current, color="red")
-                            axtwin.set_ylabel("Current (A)")
-                            axtwin.grid()
-                            ax[0].set_title("(a) V-t and I-t")
-                            axplts = axplt1 + axplt2
-                            labels = ["Voltage", "Current"]
-                            ax[0].legend(axplts, labels, loc="upper left")
-                            # (b)
-                            # (b-1) I-V曲线和两个悬浮电势V_f
-                            range_I = max(current) - min(current)
-                            ax[1].vlines(
-                                x=V_f1,
-                                ymin=0 - 0.1 * range_I,
-                                ymax=0 + 0.1 * range_I,
-                                colors="r",
-                                linestyles="dashed",
+                        # print(sum(f_MAXWELL[1:]*np.sqrt(v_f_MAXWELL[1:]) * np.diff(v_f_MAXWELL)))
+                        plt.plot(v_f_MAXWELL, f_MAXWELL, label="f_MAXWELL")
+                        f_Druyvesteyn = []
+                        g = 2
+                        beta1 = gamma(5 / (2 * g)) ** (3 / (2 * g)) * gamma(3 / 2) ** (
+                            -5 / 2
+                        )
+                        beta2 = gamma(5 / (2 * g)) * gamma(3 / (2 * g)) ** (-1)
+                        for i in range(len(v_f_MAXWELL)):
+                            f_Druyvesteyn.append(
+                                T_e ** (-3 / 2)
+                                * beta1
+                                * np.exp(-((v_f_MAXWELL[i] * beta2 / T_e) ** g))
+                                # * np.sqrt(v_f_MAXWELL[i])
                             )
-                            ax[1].text(
-                                x=V_f1 + max(voltage) * 0.1,
-                                y=0.1 * range_I,
-                                s="V_f1=" + str(round(V_f1, 2)) + " V",
-                            )
-                            range_I = max(current) - min(current)
-                            ax[1].vlines(
-                                x=V_f2,
-                                ymin=0 - 0.1 * range_I,
-                                ymax=0 + 0.1 * range_I,
-                                colors="r",
-                                linestyles="dashed",
-                            )
-                            ax[1].text(
-                                x=V_f2 + max(voltage) * 0.1,
-                                y=0.02 * range_I,
-                                s="V_f2=" + str(round(V_f2, 2)) + " V",
-                            )
-                            axplt1 = ax[1].plot(voltage, current)
-                            # (b-2) dI/dV-V曲线，找其拐点为等离子体电势V_p
-                            # 降采样
-                            axtwin = ax[1].twinx()
-                            axplt2 = axtwin.plot(dIV, dI, color="orange")
-                            axtwin.set_ylabel("dI/dV (mA/V)")
-                            axplts = axplt1 + axplt2
-                            range_dI = max(dI) - min(dI)
-                            axtwin.vlines(
-                                x=V_p,
-                                ymin=max(dI) - 0.1 * range_dI,
-                                ymax=max(dI) + 0.1 * range_dI,
-                                colors="r",
-                                linestyles="dashed",
-                            )
-                            axtwin.text(
-                                x=V_p + max(dIV) * 0.1,
-                                y=max(dI),
-                                s="V_p=" + str(round(V_p, 2)) + " V",
-                            )
-                            labels = ["I-V", "dI/dV-V"]
-                            ax[1].legend(axplts, labels, loc="upper left")
-                            ax[1].set_xlim((-30, 50))  # 绘制电压范围
-                            ax[1].set_xlabel("Voltage (V)")
-                            ax[1].set_ylabel("Current (A)")
-                            ax[1].grid()
-                            ax[1].set_title("(b) I-V and dI/dV-V")
-                            # (b-3) 找饱和离子电流
-                            ax[1].hlines(
-                                xmin=0.9 * min(voltage),
-                                xmax=0.1 * min(voltage),
-                                y=I_i0,
-                                colors="r",
-                                linestyles="dashed",
-                            )
-                            ax[1].text(
-                                # x=0.9 * min(voltage),
-                                x=-30,
-                                y=I_i0 + (max(current) - min(current)) * 0.1,
-                                s="I_i0=" + str(round(I_i0, 5)) + " A",
-                            )
-                            # (c) ln_I to k
-                            ax[2].scatter(trans_stage_vol, ln_I)
-                            ax[2].plot(trans_stage_vol, k * trans_stage_vol + b, "r")
-                            ax[2].set_xlabel("trans_stage_vol")
-                            ax[2].set_ylabel("ln(I)")
-                            ax[2].legend(["ln(I)", "k*V+b"], loc="upper left")
-                            ax[2].grid()
-                            ax[2].text(
-                                x=trans_stage_vol[0]
-                                + 0.4 * (trans_stage_vol[-1] - trans_stage_vol[0]),
-                                y=ln_I[0] + 0.1 * (ln_I[-1] - ln_I[0]),
-                                s="k="
-                                + str(round(k, 4))
-                                + "\nk_BT_e="
-                                + str(round(T_e, 1))
-                                + " eV\nn_e="
-                                + "{:.2e}".format(n_e)
-                                + " m^-3",
-                            )
-                            ax[2].set_title("(c) ln(I)-V")
-                            plt.plot()
-                            plt.show()
-                            if_print_first = False
-                        except:
-                            if_print_first = True
+                        plt.plot(v_f_MAXWELL, f_Druyvesteyn, label="f_Druyvesteyn")
+                        plt.title("Normalized I, dI and ddI")
+                        # plt.xlim([0, V_p])
+                        # plt.ylim([1e-5, 1e-2])
+                        plt.yscale("log")
+                        plt.legend()
+                        plt.grid()
+                        plt.show()
+                        if_print_first_EEDF = False
+                    except:
+                        if_print_first_EEDF = True
             except:
                 pass  # 若计算失败，跳过
         V_p = np.mean(V_ps)
@@ -460,9 +512,9 @@ class SLP:
 
 if __name__ == "__main__":
     dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-04-14 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0246ALL.csv"
-    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
-    # path = "tek0102ALL.csv"
+    path = "tek0336ALL.csv"
+    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-23 可替换针尖单探针测试/data/RAW/"
+    # path = "tek0000ALL.csv"
 
     default_path = dir + path
     data_obj = data.data(default_path)
@@ -473,5 +525,5 @@ if __name__ == "__main__":
         "L": 8,
     }
     V_p, T_e, n_e, V_p_std, T_e_std, n_e_std = SLP_example.cal(
-        data_points, if_print=True, if_print_first=True
+        data_points, if_print=True, if_print_first=True, if_print_first_EEDF=False
     )

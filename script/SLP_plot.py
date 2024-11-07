@@ -233,7 +233,7 @@ if __name__ == "__main__":
     data_obj = data.data(default_path)
     data_points = data_obj.read()
     fig, V_f, T_e, n_e = SLP_read_and_plot(data_points)
-    plt.savefig("res/SLP_tmp_plot.jpg")
+    # plt.savefig("res/SLP_tmp_plot.jpg")
     plt.plot()
     plt.show()
     endtime = time.time()

@@ -15,7 +15,7 @@ import SLP
 class RPA:
     def __init__(self) -> None:
         self.ref_parameters = {
-            "d": 0.9,  # 栅网孔径       mm
+            "d": 0.1,  # 栅网孔径       mm
             "D": 28,  # 收集极直径      mm
         }
 
@@ -63,6 +63,7 @@ class RPA:
         # 这里计算电流梯度dI/dV，后面绘图取正值为能量分布函数
         dI = np.diff(current[start:end:dstep]) / np.diff(voltage[start:end:dstep])
         dI = scipy.signal.savgol_filter(dI, int(len(dI) / 20 + 2), smooth_dimention)
+        f_ni = scipy.signal.savgol_filter(-dI, int(len(dI) / 10), smooth_dimention)
         dIV = voltage[start:end:dstep]
         dIV = dIV[1:]
         if if_print:
@@ -87,7 +88,6 @@ class RPA:
             axplts = axplt1 + axplt2
             labels = ["Voltage", "Current"]
             ax[0].legend(axplts, labels, loc="upper right")
-            f_ni = scipy.signal.savgol_filter(-dI, int(len(dI) / 10), smooth_dimention)
             ax[1].plot(dIV, f_ni)
             ax[1].set_ylim([0, 1.2 * max(f_ni)])
             ax[1].set_xlabel("Voltage (V)")
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-07-07 RPA测试/data/RAW/"
     # path = "tek0015ALL.csv"
     dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-09 一号阴极测试/2024-11-02 RPA测试/data/RAW/"
-    path = "tek0029All.csv"
+    path = "tek0002All.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_points = data_obj.read()

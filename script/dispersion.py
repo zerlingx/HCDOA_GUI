@@ -48,17 +48,18 @@ def get_FFT(dT, FFT_data, fre_range):
     return Fre, FFT_y, FFT_absn
 
 
+# Deltax_x为探针间距
 def init_k_func_omega(Fre, FFT_sig1, FFT_sig2, Deltax_x=3.5e-3):
     global table_k
     k_func_omega = (
         1
         / Deltax_x
         * np.arctan(
-            # 论文里这一项用了个有歧义的符号，即\\mathcal{F}^*，我还以为上角标星号是共轭的意思，但似乎只是表示了从两个信号得出的两个变换结果
-            # (FFT_sig2 * FFT_sig1.conj()).imag
-            # / (FFT_sig2 * FFT_sig1.conj()).real
-            (FFT_sig2 * FFT_sig1).imag
-            / (FFT_sig2 * FFT_sig1).real
+            # 论文里这一项用了个有歧义的符号，即\\mathcal{F}^*，似乎是共轭的意思
+            (FFT_sig2 * FFT_sig1.conj()).imag
+            / (FFT_sig2 * FFT_sig1.conj()).real
+            # (FFT_sig2 * FFT_sig1).imag
+            # / (FFT_sig2 * FFT_sig1).real
         )
     )
     zipped = zip(Fre, k_func_omega)
@@ -82,8 +83,8 @@ def use_KDE_plot(x, y, values):
     # ]  # 100j 表示100x100的网格
     grid = np.vstack([grid_x.ravel(), grid_y.ravel()])
     kde_values = kde(grid).reshape(grid_x.shape)
-    # kde_values = kde_values / np.max(kde_values)
-    kde_values = np.log(kde_values)
+    kde_values = kde_values / np.max(kde_values)
+    # kde_values = np.log(kde_values)
     #
     # 绘制密度/热力图
     plt.figure(figsize=(6, 5))
@@ -100,14 +101,14 @@ def use_KDE_plot(x, y, values):
         grid_y / 1000,
         kde_values,
         shading="auto",
-        cmap="viridis",  # coolwarm/viridis效果也不错
+        cmap="coolwarm",  # coolwarm/viridis效果比较好
     )
     plt.colorbar()
     # plt.colorbar(label="归一化功率谱")
     plt.xlabel(r"波数 $\mathrm{(m^{-1})}$")
     plt.ylabel(r"频率 $\mathrm{(kHz)}$")
     plt.grid()
-    plt.savefig("res/dispersion_20240512.jpg")
+    plt.savefig("res/dispersion.jpg")
     plt.show()
 
 
@@ -120,6 +121,7 @@ def dispersion(
     FFT_channels=[1, 2],
     save_FFT_csv=False,
     save_FFT_path="res/FFT/",
+    Deltax_x=3.5e-3,
 ):
     # 获取FFT数据
     res = data_points
@@ -127,6 +129,8 @@ def dispersion(
     FFT_y = []
     FFT_psd_norm = []
     for i in FFT_channels:
+        # mean_res = np.mean(res[i])
+        # FFT_data = (res[i] - mean_res) / mean_res
         FFT_data = res[i]
         Fre, FFT_y_tmp, FFT_absn_tmp = get_FFT(dT, FFT_data, fre_range)
         FFT_y.append(FFT_y_tmp)
@@ -138,6 +142,7 @@ def dispersion(
         Fre,
         FFT_y[1],
         FFT_y[0],
+        Deltax_x,
     )
     ks = []
     for omega in Fre:
@@ -145,11 +150,12 @@ def dispersion(
     # 每个点的权重
     values = []
     for i in range(len(Fre)):
-        values.append((FFT_psd_norm[0][i] + FFT_psd_norm[1][i]) / 2)
+        # values.append((FFT_psd_norm[0][i] + FFT_psd_norm[1][i]) / 2)
+        values.append(1)
     # KDE
     use_KDE_plot(ks, Fre, values)
     # 散点图
-    # plt.scatter(ks, Fre, c=(FFT_psd_norm[0] + FFT_psd_norm[1]) / 2, s=1)
+    # plt.scatter(ks, Fre, c=(FFT_psd_norm[0] + FFT_psd_norm[1]) / 2, s=0.1)
     # plt.colorbar(label="Value")
     # plt.grid()
     # plt.show()
@@ -161,10 +167,12 @@ def dispersion(
 
 
 if __name__ == "__main__":
-    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-12 羽流诊断与色散关系测试/data/RAW/"
-    path = "tek0115ALL.csv"
+    dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-03 一号阴极测试/2024-05-05 羽流诊断与色散关系测试/data/RAW/"
+    path = "tek0012ALL.csv"
+    # dir = "D:/001_zerlingx/archive/for_notes/HC/07_experiments/2024-09 一号阴极测试/2024-11-13 双探针离子声波测量/data/RAW/"
+    # path = "tek0009ALL.csv"
     default_path = dir + path
     data_obj = data.data(default_path)
     data_obj.read_range = [0, 1e7]
     data_points = data_obj.read()
-    dispersion(data_points, fre_range=[1e1, 3e6])
+    dispersion(data_points, fre_range=[1e1, 3e6], Deltax_x=0.98e-3)
